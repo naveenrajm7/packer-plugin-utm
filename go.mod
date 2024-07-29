@@ -1,6 +1,8 @@
 module github.com/hashicorp/packer-plugin-scaffolding
 
-go 1.20
+go 1.21.0
+
+toolchain go1.22.5
 
 require (
 	github.com/hashicorp/hcl/v2 v2.19.1
