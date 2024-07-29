@@ -1,4 +1,4 @@
-module github.com/hashicorp/packer-plugin-scaffolding
+module github.com/naveenrajm7/packer-plugin-utm
 
 go 1.21.0
 

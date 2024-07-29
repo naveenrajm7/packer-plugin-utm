@@ -1,4 +1,4 @@
-NAME=scaffolding
+NAME=utm
 BINARY=packer-plugin-${NAME}
 
 COUNT?=1
