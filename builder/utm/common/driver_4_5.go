@@ -2,28 +2,48 @@ package common
 
 import (
 	"bytes"
+	"fmt"
+	"log"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
 type Utm45Driver struct {
 	// This is the path to the utmctl binary
-	utmctlPath string
+	UtmctlPath string
 }
 
 func (d *Utm45Driver) Delete(name string) error {
-	return d.Utmctl("delete", name)
+	_, err := d.Utmctl("delete", name)
+	return err
 }
 
 func (d *Utm45Driver) Import(name string, path string) error {
-	// TODO: Implement this
+	var stdout bytes.Buffer
+	// TODO: While importing we should have ability to set the name of the VM
+	// UTM does not support setting the name of the VM while importing
+	// So we make sure VM name is same as the name in plist.config (previous name in UTM bundle)
+	// This is a limitation of UTM
+	cmd := exec.Command(
+		"osascript", "-e",
+		fmt.Sprintf(`tell application "UTM" to open POSIX file "%s"`, path),
+	)
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	// "missing value" in the output means AppleScript was successful
+	// but not necessarily the VM was imported successfully
+	// UTM does not provide a way to check if the VM was imported successfully
+	// So we pray!
 	return nil
 }
 
 func (d *Utm45Driver) IsRunning(name string) (bool, error) {
 	var stdout bytes.Buffer
 
-	cmd := exec.Command(d.utmctlPath, "status", name)
+	cmd := exec.Command(d.UtmctlPath, "status", name)
 	cmd.Stdout = &stdout
 	if err := cmd.Run(); err != nil {
 		return false, err
@@ -54,15 +74,32 @@ func (d *Utm45Driver) IsRunning(name string) (bool, error) {
 }
 
 func (d *Utm45Driver) Stop(name string) error {
-	if err := d.Utmctl("stop", name); err != nil {
+	if _, err := d.Utmctl("stop", name); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (d *Utm45Driver) Utmctl(args ...string) error {
-	// TODO: Implement this
-	return nil
+func (d *Utm45Driver) Utmctl(args ...string) (string, error) {
+	var stdout, stderr bytes.Buffer
+
+	log.Printf("Executing utmctl: %#v", args)
+	cmd := exec.Command(d.UtmctlPath, args...)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+
+	stdoutString := strings.TrimSpace(stdout.String())
+	stderrString := strings.TrimSpace(stderr.String())
+
+	if _, ok := err.(*exec.ExitError); ok {
+		err = fmt.Errorf("Utmctl error: %s", stderrString)
+	}
+
+	log.Printf("stdout: %s", stdoutString)
+	log.Printf("stderr: %s", stderrString)
+
+	return stdoutString, err
 }
 
 func (d *Utm45Driver) Verify() error {
@@ -70,6 +107,31 @@ func (d *Utm45Driver) Verify() error {
 }
 
 func (d *Utm45Driver) Version() (string, error) {
-	// TODO: Implement this
-	return "4.5", nil
+	var stdout bytes.Buffer
+
+	cmd := exec.Command("osascript", "-e",
+		`tell application "System Events" to return version of application "UTM"`)
+
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+
+	versionOutput := strings.TrimSpace(stdout.String())
+	log.Printf("UTM version output : %s", versionOutput)
+
+	// Check if the output contains the error message
+	if strings.Contains(versionOutput, "get application") {
+		return "", fmt.Errorf("UTM is not installed")
+	}
+
+	versionRe := regexp.MustCompile(`^(\d+\.\d+\.\d+)$`)
+	matches := versionRe.FindStringSubmatch(versionOutput)
+	if matches == nil || len(matches) != 2 {
+		return "", fmt.Errorf("no version found: %s", versionOutput)
+	}
+
+	log.Printf("UTM version: %s", matches[1])
+	return matches[1], nil
+
 }

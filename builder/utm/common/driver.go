@@ -26,7 +26,7 @@ type Driver interface {
 
 	// Utmctl executes the given Utmctl command
 	// and returns the stdout channel as string
-	Utmctl(...string) error
+	Utmctl(...string) (string, error)
 
 	// Verify checks to make sure that this driver should function
 	// properly. If there is any indication the driver can't function,
