@@ -45,7 +45,7 @@ func (s *StepShutdown) Run(ctx context.Context, state multistep.StateBag) multis
 			log.Printf("Executing shutdown command: %s", s.Command)
 			cmd := &packersdk.RemoteCmd{Command: s.Command}
 			if err := cmd.RunWithUi(ctx, comm, ui); err != nil {
-				err := fmt.Errorf("Failed to send shutdown command: %s", err)
+				err := fmt.Errorf("failed to send shutdown command: %s", err)
 				state.Put("error", err)
 				ui.Error(err.Error())
 				return multistep.ActionHalt
@@ -54,7 +54,7 @@ func (s *StepShutdown) Run(ctx context.Context, state multistep.StateBag) multis
 		} else {
 			ui.Say("Halting the virtual machine...")
 			if err := driver.Stop(vmName); err != nil {
-				err := fmt.Errorf("Error stopping VM: %s", err)
+				err := fmt.Errorf("error stopping VM: %s", err)
 				state.Put("error", err)
 				ui.Error(err.Error())
 				return multistep.ActionHalt
@@ -81,7 +81,7 @@ func (s *StepShutdown) Run(ctx context.Context, state multistep.StateBag) multis
 
 		select {
 		case <-shutdownTimer:
-			err := errors.New("Timeout while waiting for machine to shutdown.")
+			err := errors.New("timeout while waiting for machine to shutdown")
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt

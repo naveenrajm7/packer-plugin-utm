@@ -31,7 +31,7 @@ func (s *StepUploadVersion) Run(ctx context.Context, state multistep.StateBag) m
 
 	version, err := driver.Version()
 	if err != nil {
-		state.Put("error", fmt.Errorf("Error reading version for metadata upload: %s", err))
+		state.Put("error", fmt.Errorf("error reading version for metadata upload: %s", err))
 		return multistep.ActionHalt
 	}
 
@@ -39,7 +39,7 @@ func (s *StepUploadVersion) Run(ctx context.Context, state multistep.StateBag) m
 	var data bytes.Buffer
 	data.WriteString(version)
 	if err := comm.Upload(s.Path, &data, nil); err != nil {
-		state.Put("error", fmt.Errorf("Error uploading UTM version: %s", err))
+		state.Put("error", fmt.Errorf("error uploading UTM version: %s", err))
 		return multistep.ActionHalt
 	}
 

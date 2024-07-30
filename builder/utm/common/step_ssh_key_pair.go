@@ -66,7 +66,7 @@ func (s *StepSshKeyPair) Run(ctx context.Context, state multistep.StateBag) mult
 		Comment: fmt.Sprintf("packer_%s", uuid.TimeOrderedUUID()),
 	})
 	if err != nil {
-		state.Put("error", fmt.Errorf("Error creating temporary keypair: %s", err))
+		state.Put("error", fmt.Errorf("error creating temporary keypair: %s", err))
 		return multistep.ActionHalt
 	}
 
@@ -84,14 +84,14 @@ func (s *StepSshKeyPair) Run(ctx context.Context, state multistep.StateBag) mult
 		ui.Message(fmt.Sprintf("Saving communicator private key for debug purposes: %s", s.DebugKeyPath))
 		f, err := os.OpenFile(s.DebugKeyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 		if err != nil {
-			state.Put("error", fmt.Errorf("Error saving debug key: %s", err))
+			state.Put("error", fmt.Errorf("error saving debug key: %s", err))
 			return multistep.ActionHalt
 		}
 		defer f.Close()
 
 		// Write the key out
 		if _, err := f.Write(kp.PrivateKeyPemBlock); err != nil {
-			state.Put("error", fmt.Errorf("Error saving debug key: %s", err))
+			state.Put("error", fmt.Errorf("error saving debug key: %s", err))
 			return multistep.ActionHalt
 		}
 	}

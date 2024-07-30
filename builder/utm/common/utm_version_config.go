@@ -29,7 +29,7 @@ func (c *UtmVersionConfig) Prepare(communicatorType string) []error {
 
 	if communicatorType == "none" && *c.UtmVersionFile != "" {
 		errs = append(errs, fmt.Errorf("utm_version_file has to be an "+
-			"empty string when communicator = 'none'."))
+			"empty string when communicator = 'none'"))
 	}
 
 	return errs
