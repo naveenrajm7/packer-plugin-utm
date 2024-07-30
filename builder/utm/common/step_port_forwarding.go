@@ -31,9 +31,9 @@ type StepPortForwarding struct {
 }
 
 func (s *StepPortForwarding) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
-	// driver := state.Get("driver").(Driver)
+	driver := state.Get("driver").(Driver)
 	ui := state.Get("ui").(packersdk.Ui)
-	// vmName := state.Get("vmName").(string)
+	vmName := state.Get("vmName").(string)
 
 	if s.CommConfig.Type == "none" {
 		log.Printf("Not using a communicator, skipping setting up port forwarding...")
@@ -55,7 +55,7 @@ func (s *StepPortForwarding) Run(ctx context.Context, state multistep.StateBag) 
 			Network: "tcp",
 		}.Listen(ctx)
 		if err != nil {
-			err := fmt.Errorf("Error creating port forwarding rule: %s", err)
+			err := fmt.Errorf("error creating port forwarding rule: %s", err)
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt
@@ -63,15 +63,50 @@ func (s *StepPortForwarding) Run(ctx context.Context, state multistep.StateBag) 
 		s.l.Listener.Close() // free port, but don't unlock lock file
 		commHostPort = s.l.Port
 
-		// Make sure to configure the network interface to 'Emulated VLAN' mode
-		// TODO: Add code to configure the network interface 1 to 'Emulated VLAN' mode
+		// Make sure to clear the network interfaces and prepare for the new configuration
+		if _, err := driver.ExecuteOsaScript("clear_network_interfaces.applescript", vmName); err != nil {
+			err := fmt.Errorf("error clearing network interfaces: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
 
-		// Add access to localhost => UTM 'Shared Network' interface if necessary
-		// TODO: Add code to add access to localhost => UTM 'Shared Network' interface if necessary
+		// We now hard code interfaces as needed by Vagrant,
+		// 0 index - 'Shared Network' interface
+		// 1 index - 'Emulated VLAN' interface
+		// but this should be configurable
+
+		// Add access to localhost => UTM 'Shared Network' interface
+		if _, err := driver.ExecuteOsaScript("add_network_interface.applescript", vmName, "ShRd"); err != nil {
+			err := fmt.Errorf("error adding network interface: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+
+		// Make sure to configure the network interface to 'Emulated VLAN' mode
+		// required for port forwarding now in packer , later in vagrant
+		if _, err := driver.ExecuteOsaScript("add_network_interface.applescript", vmName, "EmUd"); err != nil {
+			err := fmt.Errorf("error adding network interface: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
 
 		// Create a forwarded port mapping to the VM (on the 'Emulated VLAN' interface)
-		// TODO: Add code to create a forwarded port mapping to the VM (on the 'Emulated VLAN' interface)
 		// "tcp, 127.0.0.1, hostPort, guestPort"
+		ui.Say(fmt.Sprintf("Creating forwarded port mapping for communicator (SSH, WinRM, etc) (host port %d)", commHostPort))
+		command := []string{
+			"add_port_forwards.applescript", vmName,
+			"--index", "1",
+			fmt.Sprintf("TcPp,,%d,127.0.0.1,%d", guestPort, commHostPort),
+		}
+		if _, err := driver.ExecuteOsaScript(command...); err != nil {
+			err := fmt.Errorf("error adding port forwarding rule: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
 
 	}
 	// Save the port we're using so that future steps can use it

@@ -1,8 +1,14 @@
 package common
 
 import (
+	"embed"
 	"log"
 	"os/exec"
+)
+
+var (
+	//go:embed scripts/*
+	osascripts embed.FS
 )
 
 // A driver is able to talk to UTM and perform certain
@@ -14,6 +20,9 @@ import (
 type Driver interface {
 	// Delete a VM by name
 	Delete(string) error
+
+	// Executes the given AppleScript with the given arguments.
+	ExecuteOsaScript(command ...string) (string, error)
 
 	// Import a VM
 	Import(string, string) error

@@ -3,8 +3,10 @@ package common
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -17,6 +19,51 @@ type Utm45Driver struct {
 func (d *Utm45Driver) Delete(name string) error {
 	_, err := d.Utmctl("delete", name)
 	return err
+}
+
+// ExecuteOsaScript executes an AppleScript command with the given arguments.
+func (d *Utm45Driver) ExecuteOsaScript(command ...string) (string, error) {
+	if len(command) == 0 {
+		return "", fmt.Errorf("no command provided")
+	}
+
+	// Read the script content from the embedded files
+	scriptPath := filepath.Join("scripts", command[0])
+	scriptContent, err := osascripts.ReadFile(scriptPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read script %s: %v", scriptPath, err)
+	}
+
+	// Construct the command to execute
+	cmd := exec.Command("osascript", "-")
+
+	// Append additional arguments to the command
+	if len(command) > 1 {
+		cmd.Args = append(cmd.Args, command[1:]...)
+	}
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return "", err
+	}
+
+	go func() {
+		defer stdin.Close()
+		io.WriteString(stdin, string(scriptContent))
+	}()
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+
+	stdoutString := strings.TrimSpace(stdout.String())
+	stderrString := strings.TrimSpace(stderr.String())
+
+	log.Printf("stdout: %s", stdoutString)
+	log.Printf("stderr: %s", stderrString)
+
+	return stdoutString, err
 }
 
 func (d *Utm45Driver) Import(name string, path string) error {

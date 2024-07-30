@@ -5,13 +5,14 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 )
 
-// This step TODO:(cleans up forwarded ports) and exports the VM to an UTM.
+// This step cleans up forwarded ports and (TODO) exports the VM to an UTM file.
 //
 // Uses:
 //
@@ -29,7 +30,7 @@ type StepExport struct {
 }
 
 func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
-	// If ISO export is configured, ensure this option is propagated to VBoxManage.
+	// If ISO export is configured, ensure this option is propagated to UTM.
 	for _, option := range s.ExportOpts {
 		if option == "--iso" || option == "-I" {
 			s.ExportOpts = append(s.ExportOpts, "--iso")
@@ -37,6 +38,7 @@ func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multiste
 		}
 	}
 
+	driver := state.Get("driver").(Driver)
 	ui := state.Get("ui").(packersdk.Ui)
 	vmName := state.Get("vmName").(string)
 	if s.OutputFilename == "" {
@@ -51,7 +53,24 @@ func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multiste
 	// TODO: Actually export the VM
 	ui.Say("Preparing to export machine...")
 
-	// Export the VM to an OVF
+	// Clear out the Packer-created forwarding rule
+	commPort := state.Get("commHostPort")
+	if !s.SkipNatMapping && commPort != 0 {
+		ui.Message(fmt.Sprintf(
+			"Deleting forwarded port mapping for the communicator (SSH, WinRM, etc) (host port %d)", commPort))
+		command := []string{
+			"clear_port_forwards.applescript", vmName,
+			"--index", "1", commPort.(string),
+		}
+		if _, err := driver.Utmctl(command...); err != nil {
+			err := fmt.Errorf("error deleting port forwarding rule: %s", err)
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
+	}
+
+	// Export the VM to an UTM file
 	outputPath := filepath.Join(s.OutputDir, s.OutputFilename+"."+s.Format)
 	ui.Say("Exporting virtual machine...")
 
