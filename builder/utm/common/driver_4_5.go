@@ -84,6 +84,7 @@ func (d *Utm45Driver) Import(name string, path string) error {
 	// but not necessarily the VM was imported successfully
 	// UTM does not provide a way to check if the VM was imported successfully
 	// So we pray!
+	// The error appears in UI, but not through script
 	return nil
 }
 

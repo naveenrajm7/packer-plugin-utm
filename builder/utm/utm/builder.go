@@ -59,7 +59,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			DebugKeyPath: fmt.Sprintf("%s.pem", b.config.PackerBuildName),
 			Comm:         &b.config.Comm,
 		},
-		&commonsteps.StepDownload{
+		&utmcommon.StepDownload{
 			Checksum:    b.config.Checksum,
 			Description: "UTM",
 			Extension:   "utm",
