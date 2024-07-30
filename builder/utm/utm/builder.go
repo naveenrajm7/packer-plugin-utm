@@ -71,6 +71,12 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			Name:           b.config.VMName,
 			KeepRegistered: b.config.KeepRegistered,
 		},
+		&utmcommon.StepPortForwarding{
+			CommConfig:     &b.config.CommConfig.Comm,
+			HostPortMin:    b.config.HostPortMin,
+			HostPortMax:    b.config.HostPortMax,
+			SkipNatMapping: b.config.SkipNatMapping,
+		},
 		&utmcommon.StepRun{},
 		&communicator.StepConnect{
 			Config:    &b.config.CommConfig.Comm,
