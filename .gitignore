@@ -1,5 +1,6 @@
 main
-packer-plugin-scaffolding
+# Test binary files
+packer-plugin-utm
 **/packer_log*.txt
 **/git_*test.pkr.hcl
 crash.log
