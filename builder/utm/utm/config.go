@@ -52,8 +52,9 @@ type Config struct {
 	// after download. By default, it will go in the packer cache, with a hash of
 	// the original filename as its name.
 	TargetPath string `mapstructure:"target_path" required:"false"`
-	// This is the name of the OVF file for the new virtual
-	// machine, without the file extension. By default this is packer-BUILDNAME,
+	// This is the name of the UTM file for the new virtual machine, without
+	// the file extension. Make sure VMName in UTM after import is same
+	// as the UTM file name, By default this is packer-BUILDNAME,
 	// where "BUILDNAME" is the name of the build.
 	VMName string `mapstructure:"vm_name" required:"false"`
 	// Set this to true if you would like to keep

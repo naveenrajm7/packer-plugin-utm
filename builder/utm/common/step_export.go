@@ -31,7 +31,7 @@ type StepExport struct {
 }
 
 func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
-	// If ISO export is configured, ensure this option is propagated to UTM.
+	// TODO: If ISO export is configured, ensure this option is propagated to UTM.
 	for _, option := range s.ExportOpts {
 		if option == "--iso" || option == "-I" {
 			s.ExportOpts = append(s.ExportOpts, "--iso")
@@ -87,10 +87,11 @@ func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multiste
 	// using Share action in UTM VM in output Path
 	ui.Say("UTM API does not support exporting VMs yet.")
 	ui.Say("Please manually export the VM using 'Share...' action in UTM VM menu.")
-	ui.Say(fmt.Sprintf("Please make sure the VM is exported to the path %s", outputPath))
+	ui.Say(fmt.Sprintf("Please make sure the VM is exported to the path %s ", outputPath))
+	ui.Say("The exported UTM file in the output directory will be passed as build Artifact.")
 	// ask user to input the path of the exported file
 	confirmOption, err := ui.Ask(
-		fmt.Sprintf("Confirm the path of the exported file [%s] [Y/n]:", outputPath))
+		fmt.Sprintf("Confirm you have exported the VM to path [%s] [Y/n]:", outputPath))
 
 	if err != nil {
 		err := fmt.Errorf("error during export step: %s", err)
@@ -102,6 +103,8 @@ func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multiste
 	if confirmOption == "Y" || confirmOption == "y" {
 		// Proceed with the next steps
 		ui.Say("Proceeding assuming the export is done...")
+		// We set export path as the output directory with UTM file.
+		// So it can be used as an artifact in the next steps.
 		state.Put("exportPath", outputPath)
 
 		return multistep.ActionContinue

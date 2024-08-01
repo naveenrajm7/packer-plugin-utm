@@ -118,13 +118,13 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 
 	// If we were interrupted or cancelled, then just exit.
 	if _, ok := state.GetOk(multistep.StateCancelled); ok {
-		return nil, errors.New("Build was cancelled.")
+		return nil, errors.New("build was cancelled")
 	}
 
 	if _, ok := state.GetOk(multistep.StateHalted); ok {
-		return nil, errors.New("Build was halted.")
+		return nil, errors.New("build was halted")
 	}
 
 	generatedData := map[string]interface{}{"generated_data": state.Get("generated_data")}
-	return utmcommon.NewArtifact(b.config.OutputDir, generatedData)
+	return utmcommon.NewArtifact(b.config.OutputDir, b.config.VMName, generatedData)
 }
