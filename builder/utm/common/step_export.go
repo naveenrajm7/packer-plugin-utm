@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strconv"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
@@ -50,7 +51,6 @@ func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multiste
 		ui.Say("Skipping export of virtual machine...")
 		return multistep.ActionContinue
 	}
-	// TODO: Actually export the VM
 	ui.Say("Preparing to export machine...")
 
 	// Clear out the Packer-created forwarding rule
@@ -58,11 +58,19 @@ func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multiste
 	if !s.SkipNatMapping && commPort != 0 {
 		ui.Message(fmt.Sprintf(
 			"Deleting forwarded port mapping for the communicator (SSH, WinRM, etc) (host port %d)", commPort))
+		// Assert that commPort is of type int
+		commPortInt, ok := commPort.(int)
+		if !ok {
+			err := fmt.Errorf("commPort is not of type int")
+			state.Put("error", err)
+			ui.Error(err.Error())
+			return multistep.ActionHalt
+		}
 		command := []string{
 			"clear_port_forwards.applescript", vmName,
-			"--index", "1", commPort.(string),
+			"--index", "1", strconv.Itoa(commPortInt),
 		}
-		if _, err := driver.Utmctl(command...); err != nil {
+		if _, err := driver.ExecuteOsaScript(command...); err != nil {
 			err := fmt.Errorf("error deleting port forwarding rule: %s", err)
 			state.Put("error", err)
 			ui.Error(err.Error())
@@ -74,9 +82,34 @@ func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multiste
 	outputPath := filepath.Join(s.OutputDir, s.OutputFilename+"."+s.Format)
 	ui.Say("Exporting virtual machine...")
 
-	state.Put("exportPath", outputPath)
+	// TODO: Actually export the VM when UTM API supports it
+	// Till then ask the user to manually export the VM
+	// using Share action in UTM VM in output Path
+	ui.Say("UTM API does not support exporting VMs yet.")
+	ui.Say("Please manually export the VM using 'Share...' action in UTM VM menu.")
+	ui.Say(fmt.Sprintf("Please make sure the VM is exported to the path %s", outputPath))
+	// ask user to input the path of the exported file
+	confirmOption, err := ui.Ask(
+		fmt.Sprintf("Confirm the path of the exported file [%s] [Y/n]:", outputPath))
 
-	return multistep.ActionContinue
+	if err != nil {
+		err := fmt.Errorf("error during export step: %s", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+
+	if confirmOption == "Y" || confirmOption == "y" {
+		// Proceed with the next steps
+		ui.Say("Proceeding assuming the export is done...")
+		state.Put("exportPath", outputPath)
+
+		return multistep.ActionContinue
+	} else {
+		ui.Say("Export halted by user.")
+		return multistep.ActionHalt
+	}
+
 }
 
 func (s *StepExport) Cleanup(state multistep.StateBag) {}

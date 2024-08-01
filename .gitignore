@@ -8,3 +8,6 @@ crash.log
 dist/*
 .docs/*
 docs.zip
+
+# MacOS
+.DS_Store

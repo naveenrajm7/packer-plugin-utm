@@ -27,6 +27,8 @@ type artifact struct {
 
 // NewArtifact returns a UTM artifact containing the files
 // in the given directory.
+// TODO: add UTM as a directory to the artifact
+// Avoid adding all files as artifacts
 func NewArtifact(dir string, generatedData map[string]interface{}) (packersdk.Artifact, error) {
 	files := make([]string, 0, 5)
 	visit := func(path string, info os.FileInfo, err error) error {
