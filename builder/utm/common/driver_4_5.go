@@ -27,6 +27,9 @@ func (d *Utm45Driver) ExecuteOsaScript(command ...string) (string, error) {
 		return "", fmt.Errorf("no command provided")
 	}
 
+	// log the command to be executed
+	log.Printf("Executing OSA script command: %s", command)
+
 	// Read the script content from the embedded files
 	scriptPath := filepath.Join("scripts", command[0])
 	scriptContent, err := osascripts.ReadFile(scriptPath)
@@ -60,8 +63,12 @@ func (d *Utm45Driver) ExecuteOsaScript(command ...string) (string, error) {
 	stdoutString := strings.TrimSpace(stdout.String())
 	stderrString := strings.TrimSpace(stderr.String())
 
-	log.Printf("stdout: %s", stdoutString)
-	log.Printf("stderr: %s", stderrString)
+	if stdoutString != "" {
+		log.Printf("stdout: %s", stdoutString)
+	}
+	if stderrString != "" {
+		log.Printf("stderr: %s", stderrString)
+	}
 
 	return stdoutString, err
 }
@@ -144,8 +151,12 @@ func (d *Utm45Driver) Utmctl(args ...string) (string, error) {
 		err = fmt.Errorf("Utmctl error: %s", stderrString)
 	}
 
-	log.Printf("stdout: %s", stdoutString)
-	log.Printf("stderr: %s", stderrString)
+	if stdoutString != "" {
+		log.Printf("stdout: %s", stdoutString)
+	}
+	if stderrString != "" {
+		log.Printf("stderr: %s", stderrString)
+	}
 
 	return stdoutString, err
 }
