@@ -31,7 +31,7 @@ build {
   // compress does not compress directories, only files
   // but our output UTM VM is a directory, so we need to
   // compress it into a zip file using custom post-processor
-  post-processor "compress" {
+  post-processor "utm-zip" {
     output = "{{.BuildName}}_utm.zip"
     keep_input_artifact = true
   }
