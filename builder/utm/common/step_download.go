@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep"
@@ -16,15 +17,10 @@ import (
 // SDK Version StepDownload does not handle the local UTM file
 // So we need to modify the StepDownload to handle the local UTM file
 
-// StepDownload downloads a remote file using the download client within
-// this package. This step handles setting up the download configuration,
-// progress reporting, interrupt handling, etc.
-//
 // Uses:
 //
-//	cache packer.Cache
 //	ui    packersdk.Ui
-type StepDownload struct {
+type StepUtmDownload struct {
 	// The checksum and the type of the checksum for the download
 	Checksum string
 
@@ -50,7 +46,7 @@ type StepDownload struct {
 	Extension string
 }
 
-func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
+func (s *StepUtmDownload) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	// TODO: Change this to handle the local UTM file
 	// by checking file existence
 	// setting the file path to the ResultKey
@@ -58,8 +54,6 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 		log.Printf("No URLs were provided to Step Download. Continuing...")
 		return multistep.ActionContinue
 	}
-
-	defer log.Printf("Leaving retrieve loop for %s", s.Description)
 
 	ui := state.Get("ui").(packersdk.Ui)
 	ui.Say(fmt.Sprintf("Retrieving %s", s.Description))
@@ -72,6 +66,12 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 			return multistep.ActionHalt
 		}
 		ui.Say(fmt.Sprintf("Trying %s", source))
+		// check is the source file exists
+		if _, err := os.Stat(source); err != nil {
+			state.Put("error", fmt.Errorf("file not found: %v", err))
+			return multistep.ActionHalt
+		}
+
 		var err error
 		var dst string
 		if s.Description == "UTM" && strings.HasSuffix(source, ".utm") {
@@ -97,4 +97,4 @@ func (s *StepDownload) Run(ctx context.Context, state multistep.StateBag) multis
 	return multistep.ActionHalt
 }
 
-func (s *StepDownload) Cleanup(multistep.StateBag) {}
+func (s *StepUtmDownload) Cleanup(multistep.StateBag) {}
