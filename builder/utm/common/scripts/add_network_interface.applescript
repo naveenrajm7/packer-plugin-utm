@@ -13,7 +13,7 @@ on run argv
     -- except mode all are default values
     set newNetworkInterfaceVal to { mode: modeVal}
 
-    -- Ensure the shared network is at index 0
+    -- add the new network interface to the existing network interfaces
     copy newNetworkInterfaceVal to the end of networkInterfaces
 
     -- Update the VM configuration with the new network interface

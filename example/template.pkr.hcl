@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 packer {
   required_plugins {
-    scaffolding = {
+    utm = {
       version = ">=v0.0.1"
       source  = "github.com/naveenrajm7/utm"
     }
