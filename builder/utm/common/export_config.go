@@ -15,6 +15,7 @@ type ExportConfig struct {
 	// Only UTM, this specifies the output format
 	// of the exported virtual machine. This defaults to utm.
 	Format string `mapstructure:"format" required:"false"`
+	// TODO: add export options when utm export with options is supported
 }
 
 func (c *ExportConfig) Prepare(ctx *interpolate.Context) []error {
