@@ -7,6 +7,8 @@ import (
 
 const BuilderId = "naveenrajm7.utm.post-processor.zip"
 
+// Artifact is the result of running the UTM zip post-processor,
+// namely a zip file which contains a utm directory (UTM VM bundle).
 type Artifact struct {
 	Path string
 }

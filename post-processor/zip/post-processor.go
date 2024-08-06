@@ -33,6 +33,7 @@ type Config struct {
 	ctx interpolate.Context
 }
 
+// PostProcessor implements packersdk.PostProcessor and creates a zip archive
 type PostProcessor struct {
 	config Config
 }
