@@ -1,3 +1,4 @@
+//go:generate packer-sdc struct-markdown
 //go:generate packer-sdc mapstructure-to-hcl2 -type Config
 
 package zip
@@ -33,7 +34,8 @@ type Config struct {
 	ctx interpolate.Context
 }
 
-// PostProcessor implements packersdk.PostProcessor and creates a zip archive
+// PostProcessor implements packersdk.PostProcessor
+// Creates a zip archive of a given UTM directory (UTM VM bundle)
 type PostProcessor struct {
 	config Config
 }
