@@ -4,8 +4,9 @@
   after download. By default, it will go in the packer cache, with a hash of
   the original filename as its name.
 
-- `vm_name` (string) - This is the name of the OVF file for the new virtual
-  machine, without the file extension. By default this is packer-BUILDNAME,
+- `vm_name` (string) - This is the name of the UTM file for the new virtual machine, without
+  the file extension. Make sure VMName in UTM after import is same
+  as the UTM file name, By default this is packer-BUILDNAME,
   where "BUILDNAME" is the name of the build.
 
 - `keep_registered` (bool) - Set this to true if you would like to keep
