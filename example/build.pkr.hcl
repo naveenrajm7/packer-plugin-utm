@@ -3,41 +3,26 @@
 
 packer {
   required_plugins {
-    scaffolding = {
-      version = ">=v0.1.0"
-      source  = "github.com/hashicorp/scaffolding"
+    utm = {
+      version = ">=v0.0.1"
+      source  = "github.com/naveenrajm7/utm"
     }
   }
 }
 
-source "scaffolding-my-builder" "foo-example" {
-  mock = local.foo
-}
-
-source "scaffolding-my-builder" "bar-example" {
-  mock = local.bar
+source "utm-utm" "basic-example" {
+  source_path = "source.utm"
+  vm_name = "source"
+  ssh_username = "packer"
+  ssh_password = "packer"
+  shutdown_command = "echo 'packer' | sudo -S shutdown -P now"
 }
 
 build {
-  sources = [
-    "source.scaffolding-my-builder.foo-example",
-  ]
+  sources = [ "source.utm-utm.basic-example" ]
 
-  source "source.scaffolding-my-builder.bar-example" {
-    name = "bar"
-  }
-
-  provisioner "scaffolding-my-provisioner" {
-    only = ["scaffolding-my-builder.foo-example"]
-    mock = "foo: ${local.foo}"
-  }
-
-  provisioner "scaffolding-my-provisioner" {
-    only = ["scaffolding-my-builder.bar"]
-    mock = "bar: ${local.bar}"
-  }
-
-  post-processor "scaffolding-my-post-processor" {
-    mock = "post-processor mock-config"
+  post-processor "utm-zip" {
+    output = "{{.BuildName}}_vagrant_utm.zip"
+    keep_input_artifact = true
   }
 }
