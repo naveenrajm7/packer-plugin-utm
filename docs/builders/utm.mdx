@@ -1,0 +1,97 @@
+---
+modeline: |
+  vim: set ft=pandoc:
+description: |
+  This UTM Packer builder is able to create UTM virtual machines
+  and export them in the .UTM format, starting from an existing UTM file (exported
+  virtual machine image).
+page_title: UTM utm - Builders
+nav_title: UTM
+---
+
+# UTM Builder (from an UTM file)
+
+Type: `utm-utm`
+Artifact BuilderId: `naveenrajm7.utm`
+
+The UTM Packer builder is able to create
+[UTM](https://mac.getutm.app/) virtual machines and export them in
+the .utm format., starting from an existing utm file (exported virtual machine
+image).
+
+The builder builds a virtual machine by importing an existing utm file.
+It then boots this image, runs provisioners on this new VM, and exports that VM
+to create the image. The imported machine is deleted prior to finishing the
+build.
+
+<!--
+  A basic example on the usage of the builder. Multiple examples
+  can be provided to highlight various build configurations.
+-->
+### Basic Example
+
+Here is a basic example. This example is functional if you have an UTM matching
+the settings here.
+
+```hcl
+source "utm-utm" "basic-example" {
+  source_path = "source.utm"
+  vm_name = "source"
+  ssh_username = "packer"
+  ssh_password = "packer"
+  shutdown_command = "echo 'packer' | sudo -S shutdown -P now"
+}
+
+build {
+  sources = [ "source.utm-utm.basic-example" ]
+}
+```
+
+It is important to add a `shutdown_command`. By default Packer halts the virtual
+machine and the file system may not be sync'd. Thus, changes made in a
+provisioner might not be saved.
+
+<!-- Builder Configuration Fields -->
+## Configuration Reference
+
+There are many configuration options available for the builder.
+
+### Required:
+
+@include 'builder/utm/utm/Config-required.mdx'
+
+
+<!--
+  Optional Configuration Fields
+
+  Configuration options that are not required or have reasonable defaults
+  should be listed under the optionals section. Defaults values should be
+  noted in the description of the field
+-->
+
+#### Optional:
+
+@include 'builder/utm/utm/Config-not-required.mdx'
+
+@include 'builder/utm/common/UtmVersionConfig-not-required.mdx'
+
+
+### Export configuration
+
+#### Optional:
+
+@include 'builder/utm/common/ExportConfig-not-required.mdx'
+
+### Shutdown configuration
+
+#### Optional:
+
+@include 'builder/utm/common/ShutdownConfig-not-required.mdx'
+
+### Communicator configuration
+
+#### Optional common fields:
+
+@include 'packer-plugin-sdk/communicator/Config-not-required.mdx'
+
+@include 'builder/utm/common/CommConfig-not-required.mdx'

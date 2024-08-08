@@ -1,11 +1,6 @@
-<!--
-  Include a short overview about the plugin.
-
-  This document is a great location for creating a table of contents for each
-  of the components the plugin may provide. This document should load automatically
-  when navigating to the docs directory for a plugin.
-
--->
+The UTM plugin is able to create
+[UTM](https://mac.getutm.app/) virtual machines and export them in
+the .utm format.
 
 ### Installation
 
@@ -14,10 +9,9 @@ To install this plugin, copy and paste this code into your Packer configuration,
 ```hcl
 packer {
   required_plugins {
-    name = {
-      # source represents the GitHub URI to the plugin repository without the `packer-plugin-` prefix.
-      source  = "github.com/organization/name"
-      version = ">=0.0.1"
+    utm = {
+      version = ">=v0.0.1"
+      source  = "github.com/naveenrajm7/utm"
     }
   }
 }
@@ -26,30 +20,28 @@ packer {
 Alternatively, you can use `packer plugins install` to manage installation of this plugin.
 
 ```sh
-$ packer plugins install github.com/organization/plugin-name
+$ packer plugins install github.com/naveenrajm7/utm
 ```
 
 ### Components
 
-The Scaffolding plugin is intended as a starting point for creating Packer plugins
+The plugin comes with a builder and a post-processor to create UTM
+machines.
+The following UTM Builders and post-processors are supported.
 
 #### Builders
 
-- [builder](/packer/integrations/hashicorp/scaffolding/latest/components/builder/builder-name) - The scaffolding builder is used to create endless Packer
-  plugins using a consistent plugin structure.
-
-#### Provisioners
-
-- [provisioner](/packer/integrations/hashicorp/scaffolding/latest/components/provisioner/provisioner-name) - The scaffolding provisioner is used to provisioner
-  Packer builds.
+- [utm-utm](builders/utm.mdx) - This builder imports
+  an existing UTM file, runs provisioners on top of that VM, and exports
+  that machine to create an image (.utm). This is best if you have an existing
+  UTM VM export you want to use as the source. As an additional
+  benefit, you can feed the artifact of this builder back into itself to
+  iterate on a machine.
 
 #### Post-processors
 
-- [post-processor](/packer/integrations/hashicorp/scaffolding/latest/components/post-processor/postprocessor-name) - The scaffolding post-processor is used to
-  export scaffolding builds.
-
-#### Data Sources
-
-- [data source](/packer/integrations/hashicorp/scaffolding/latest/components/datasource/datasource-name) - The scaffolding data source is used to
-  export scaffolding data.
-
+- [utm-zip](post-processors/zip.mdx) - The utm zip post-processor is 
+simplied version of compress zip post-processor. This post-processor takes 
+in the artifact from UTM builders and zips up the UTM directory, which
+can be used to share and import VMs in UTM.
+You can use the zip version of UTM VM either through [Vagrant UTM plugin](https://github.com/naveenrajm7/vagrant_utm) or directly through [`downloadVM?url=...`](https://docs.getutm.app/advanced/remote-control/)

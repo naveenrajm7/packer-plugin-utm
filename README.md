@@ -1,90 +1,63 @@
-# Packer Plugin Scaffolding
+# Packer Plugin UTM
+The `UTM` multi-component plugin can be used with HashiCorp [Packer](https://developer.hashicorp.com/packer)
+to create custom images. For the full list of available features for this plugin see [docs](docs).
 
-This repository is a template for a Packer multi-component plugin. It is intended as a starting point for creating Packer plugins, containing:
-- A builder ([builder/scaffolding](builder/scaffolding))
-- A provisioner ([provisioner/scaffolding](provisioner/scaffolding))
-- A post-processor ([post-processor/scaffolding](post-processor/scaffolding))
-- A data source ([datasource/scaffolding](datasource/scaffolding))
-- Docs ([docs](docs))
-- A working example ([example](example))
+## Installation
 
-These folders contain boilerplate code that you will need to edit to create your own Packer multi-component plugin.
-A full guide to creating Packer plugins can be found at [Extending Packer](https://www.packer.io/docs/plugins/creation).
+### Using pre-built releases
 
-In this repository you will also find a pre-defined GitHub Action configuration for the release workflow
-(`.goreleaser.yml` and `.github/workflows/release.yml`). The release workflow configuration makes sure the GitHub
-release artifacts are created with the correct binaries and naming conventions.
+#### Using the `packer init` command
 
-Please see the [GitHub template repository documentation](https://docs.github.com/en/free-pro-team@latest/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template)
-for how to create a new repository from this template on GitHub.
+Starting from version 1.7, Packer supports a new `packer init` command allowing
+automatic installation of Packer plugins. Read the
+[Packer documentation](https://developer.hashicorp.com/packer/docs/commands/init) for more information.
 
-## Packer plugin projects
+To install this plugin, copy and paste this code into your Packer configuration .
+Then, run [`packer init`](https://developer.hashicorp.com/packer/docs/commands/init).
 
-Here's a non exaustive list of Packer plugins that you can checkout:
-
-* [github.com/hashicorp/packer-plugin-docker](https://github.com/hashicorp/packer-plugin-docker)
-* [github.com/exoscale/packer-plugin-exoscale](https://github.com/exoscale/packer-plugin-exoscale)
-* [github.com/sylviamoss/packer-plugin-comment](https://github.com/sylviamoss/packer-plugin-comment)
-* [github.com/hashicorp/packer-plugin-hashicups](https://github.com/hashicorp/packer-plugin-hashicups)
-
-Looking at their code will give you good examples.
-
-## Build from source
-
-1. Clone this GitHub repository locally.
-
-2. Run this command from the root directory: 
-```shell 
-go build -ldflags="-X github.com/hashicorp/packer-plugin-scaffolding/version.VersionPrerelease=dev" -o packer-plugin-scaffolding
+```hcl
+packer {
+  required_plugins {
+    utm = {
+      version = ">=v0.0.1"
+      source  = "github.com/naveenrajm7/utm"
+    }
+  }
+}
 ```
 
-3. After you successfully compile, the `packer-plugin-scaffolding` plugin binary file is in the root directory. 
 
-4. To install the compiled plugin, run the following command 
-```shell
-packer plugins install --path packer-plugin-scaffolding github.com/hashicorp/scaffolding
-```
+#### Manual installation
 
-### Build on *nix systems
-Unix like systems with the make, sed, and grep commands installed can use the `make dev` to execute the build from source steps. 
+You can find pre-built binary releases of the plugin [here](https://github.com/naveenrajm7/packer-plugin-utm/releases).
+Once you have downloaded the latest archive corresponding to your target OS,
+uncompress it to retrieve the plugin binary file corresponding to your platform.
+To install the plugin, please follow the Packer documentation on
+[installing a plugin](https://developer.hashicorp.com/packer/docs/extending/plugins/#installing-plugins).
 
-### Build on Windows Powershell
-The preferred solution for building on Windows are steps 2-4 listed above.
-If you would prefer to script the building process you can use the following as a guide
 
-```powershell
-$MODULE_NAME = (Get-Content go.mod | Where-Object { $_ -match "^module"  }) -replace 'module ',''
-$FQN = $MODULE_NAME -replace 'packer-plugin-',''
-go build -ldflags="-X $MODULE_NAME/version.VersionPrerelease=dev" -o packer-plugin-scaffolding.exe
-packer plugins install --path packer-plugin-scaffolding.exe $FQN
-```
+### From Sources
 
-## Running Acceptance Tests
+If you prefer to build the plugin from sources, clone the GitHub repository
+locally and run the command `go build` from the root
+directory. Upon successful compilation, a `packer-plugin-utm` plugin
+binary file can be found in the root directory.
+To install the compiled plugin, please follow the official Packer documentation
+on [installing a plugin](https://developer.hashicorp.com/packer/docs/extending/plugins/#installing-plugins).
 
-Make sure to install the plugin locally using the steps in [Build from source](#build-from-source).
 
-Once everything needed is set up, run:
-```
-PACKER_ACC=1 go test -count 1 -v ./... -timeout=120m
-```
+### Configuration
 
-This will run the acceptance tests for all plugins in this set.
+For more information on how to configure the plugin, please read the
+documentation located in the [`docs/`](docs) directory.
 
-## Registering Plugin as Packer Integration
 
-Partner and community plugins can be hard to find if a user doesn't know what 
-they are looking for. To assist with plugin discovery Packer offers an integration
-portal at https://developer.hashicorp.com/packer/integrations to list known integrations 
-that work with the latest release of Packer. 
+## Contributing
 
-Registering a plugin as an integration requires [metadata configuration](./metadata.hcl) within the plugin
-repository and approval by the Packer team. To initiate the process of registering your 
-plugin as a Packer integration refer to the [Developing Plugins](https://developer.hashicorp.com/packer/docs/plugins/creation#registering-plugins) page.
-
-# Requirements
-
--	[packer-plugin-sdk](https://github.com/hashicorp/packer-plugin-sdk) >= v0.5.2
--	[Go](https://golang.org/doc/install) >= 1.20
-
-## Packer Compatibility
-This scaffolding template is compatible with Packer >= v1.10.2
+* If you think you've found a bug in the code or you have a question regarding
+  the usage of this software, please reach out to us by opening an issue in
+  this GitHub repository.
+* Contributions to this project are welcome: if you want to add a feature or a
+  fix a bug, please do so by opening a Pull Request in this GitHub repository.
+  In case of feature contribution, we kindly ask you to open an issue to
+  discuss it beforehand.
