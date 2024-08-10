@@ -4,7 +4,7 @@
 packer {
   required_plugins {
     utm = {
-      version = ">=v0.0.1"
+      version = ">=v0.0.2"
       source  = "github.com/naveenrajm7/utm"
     }
   }
