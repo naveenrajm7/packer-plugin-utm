@@ -15,6 +15,8 @@ on:
         description: 'Example folder'
         required: false
         default: './example'
+env:
+  PACKER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build:
@@ -29,8 +31,6 @@ jobs:
         with:
           working_directory: ${{ github.event.inputs.folder }}
           command: init
-        env:
-          AUTH_KEY: ${{ secrets.AUTH_KEY }}
 
       - name: Validate
         uses: hashicorp/packer-github-actions@master
@@ -39,7 +39,6 @@ jobs:
           command: validate
         env:
           PACKER_LOG: ${{ github.event.inputs.logs }}
-          AUTH_KEY: ${{ secrets.AUTH_KEY }}
 
       - name: Build
         uses: hashicorp/packer-github-actions@master
@@ -48,4 +47,3 @@ jobs:
           command: build
         env:
           PACKER_LOG: ${{ github.event.inputs.logs }}
-          AUTH_KEY: ${{ secrets.AUTH_KEY }}
