@@ -31,7 +31,7 @@ type Config struct {
 	common.PackerConfig        `mapstructure:",squash"`
 	commonsteps.HTTPConfig     `mapstructure:",squash"`
 	commonsteps.ISOConfig      `mapstructure:",squash"`
-	bootcommand.BootConfig     `mapstructure:",squash"`
+	bootcommand.VNCConfig      `mapstructure:",squash"`
 	utmcommon.ExportConfig     `mapstructure:",squash"`
 	utmcommon.OutputConfig     `mapstructure:",squash"`
 	utmcommon.ShutdownConfig   `mapstructure:",squash"`
@@ -40,6 +40,45 @@ type Config struct {
 	utmcommon.UtmVersionConfig `mapstructure:",squash"`
 	utmcommon.UtmBundleConfig  `mapstructure:",squash"`
 
+	// This is an array of tuples of boot commands, to type when the virtual
+	// machine is booted. The first element of the tuple is the actual boot
+	// command. The second element of the tuple, which is optional, is a
+	// description of what the boot command does. This is intended to be used for
+	// interactive installers that requires many commands to complete the
+	// installation. Both the command and the description will be printed when
+	// logging is enabled. When debug mode is enabled Packer will pause after
+	// typing each boot command. This will make it easier to follow along the
+	// installation process and make sure the Packer and the installer are in
+	// sync. `boot_steps` and `boot_commands` are mutually exclusive.
+	//
+	// Example:
+	//
+	// In HCL:
+	// ```hcl
+	// boot_steps = [
+	//   ["1<enter><wait5>", "Install NetBSD"],
+	//   ["a<enter><wait5>", "Installation messages in English"],
+	//   ["a<enter><wait5>", "Keyboard type: unchanged"],
+	//
+	//   ["a<enter><wait5>", "Install NetBSD to hard disk"],
+	//   ["b<enter><wait5>", "Yes"]
+	// ]
+	// ```
+	//
+	// In JSON:
+	// ```json
+	// {
+	//   "boot_steps": [
+	//     ["1<enter><wait5>", "Install NetBSD"],
+	//     ["a<enter><wait5>", "Installation messages in English"],
+	//     ["a<enter><wait5>", "Keyboard type: unchanged"],
+	//
+	//     ["a<enter><wait5>", "Install NetBSD to hard disk"],
+	//     ["b<enter><wait5>", "Yes"]
+	//   ]
+	// }
+	// ```
+	BootSteps [][]string `mapstructure:"boot_steps" required:"false"`
 	// The size, in megabytes, of the hard disk to create for the VM. By
 	// default, this is 40000 (about 40 GB).
 	DiskSize uint `mapstructure:"disk_size" required:"false"`
@@ -50,6 +89,23 @@ type Config struct {
 	// if the build output is not the resultant image, but created inside the
 	// VM.
 	SkipExport bool `mapstructure:"skip_export" required:"false"`
+	// The IP address that should be
+	// binded to for VNC. By default packer will use 127.0.0.1 for this. If you
+	// wish to bind to all interfaces use 0.0.0.0.
+	VNCBindAddress string `mapstructure:"vnc_bind_address" required:"false"`
+	// Whether or not to set a password on the VNC server. This option
+	// automatically enables the QMP socket. See `qmp_socket_path`. Defaults to
+	// `false`.
+	VNCUsePassword bool `mapstructure:"vnc_use_password" required:"false"`
+	// The minimum and maximum port
+	// to use for VNC access to the virtual machine. The builder uses VNC to type
+	// the initial boot_command. Because Packer generally runs in parallel,
+	// Packer uses a randomly chosen port in this range that appears available. By
+	// default this is 5900 to 6000. The minimum and maximum ports are inclusive.
+	// The minimum port cannot be set below 5900 due to a quirk in how QEMU parses
+	// vnc display address.
+	VNCPortMin int `mapstructure:"vnc_port_min" required:"false"`
+	VNCPortMax int `mapstructure:"vnc_port_max"`
 	// QEMU system architecture of the virtual machine.
 	// If this is a QEMU virtual machine, you must specify the architecture
 	// Which is required in confirguration. By default, this is aarch64.
@@ -101,7 +157,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 	errs = packersdk.MultiErrorAppend(errs, b.config.CommConfig.Prepare(&b.config.ctx)...)
 	errs = packersdk.MultiErrorAppend(errs, b.config.UtmBundleConfig.Prepare(&b.config.ctx)...)
 	errs = packersdk.MultiErrorAppend(errs, b.config.UtmVersionConfig.Prepare(b.config.CommConfig.Comm.Type)...)
-	errs = packersdk.MultiErrorAppend(errs, b.config.BootConfig.Prepare(&b.config.ctx)...)
+	errs = packersdk.MultiErrorAppend(errs, b.config.VNCConfig.Prepare(&b.config.ctx)...)
 
 	if b.config.DiskSize == 0 {
 		b.config.DiskSize = 40000
@@ -125,11 +181,42 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 			errs, errors.New("vm_backend must be either 'apple' or 'qemu'"))
 	}
 
+	if b.config.VNCBindAddress == "" {
+		b.config.VNCBindAddress = "127.0.0.1"
+	}
+
+	if b.config.VNCPortMin == 0 {
+		b.config.VNCPortMin = 5900
+	}
+
+	if b.config.VNCPortMax == 0 {
+		b.config.VNCPortMax = 6000
+	}
+
 	if b.config.VMName == "" {
 		b.config.VMName = fmt.Sprintf(
 			"packer-%s-%d", b.config.PackerBuildName, interpolate.InitTime.Unix())
 	}
 
+	if b.config.VNCPortMin < 5900 {
+		errs = packersdk.MultiErrorAppend(
+			errs, fmt.Errorf("vnc_port_min cannot be below 5900"))
+	}
+
+	if b.config.VNCPortMin > 65535 || b.config.VNCPortMax > 65535 {
+		errs = packersdk.MultiErrorAppend(
+			errs, fmt.Errorf("vmc_port_min and vnc_port_max must both be below 65535 to be valid TCP ports"))
+	}
+
+	if b.config.VNCPortMin > b.config.VNCPortMax {
+		errs = packersdk.MultiErrorAppend(
+			errs, fmt.Errorf("vnc_port_min must be less than vnc_port_max"))
+	}
+
+	if len(b.config.BootCommand) > 0 && len(b.config.BootSteps) > 0 {
+		errs = packersdk.MultiErrorAppend(errs,
+			fmt.Errorf("boot_command and boot_steps cannot be used together"))
+	}
 	// Warnings
 	if b.config.ShutdownCommand == "" {
 		warnings = append(warnings,
@@ -176,14 +263,22 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 		&utmcommon.StepAttachISOs{
 			AttachBootISO: true,
 		},
-		&utmcommon.StepPause{},
+		&utmcommon.StepPause{
+			Message: "UTM Bug: Update ISO with same ISO, so we don't get file not found error",
+		},
 		&utmcommon.StepPortForwarding{
-			CommConfig:     &b.config.CommConfig.Comm,
-			HostPortMin:    b.config.HostPortMin,
-			HostPortMax:    b.config.HostPortMax,
-			SkipNatMapping: b.config.SkipNatMapping,
+			CommConfig:             &b.config.CommConfig.Comm,
+			HostPortMin:            b.config.HostPortMin,
+			HostPortMax:            b.config.HostPortMax,
+			SkipNatMapping:         b.config.SkipNatMapping,
+			ClearNetworkInterfaces: true,
+		},
+		new(stepConfigureVNC),
+		&utmcommon.StepPause{
+			Message: "UTM API: Add QEMU Additional Arguments `-vnc 127.0.0.1:port` port=VncPort-5900",
 		},
 		&utmcommon.StepRun{},
+		&stepTypeBootCommand{},
 		&communicator.StepConnect{
 			Config:    &b.config.CommConfig.Comm,
 			Host:      utmcommon.CommHost(b.config.CommConfig.Comm.Host()),

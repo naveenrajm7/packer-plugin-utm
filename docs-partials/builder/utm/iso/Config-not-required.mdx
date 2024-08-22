@@ -1,5 +1,44 @@
 <!-- Code generated from the comments of the Config struct in builder/utm/iso/builder.go; DO NOT EDIT MANUALLY -->
 
+- `boot_steps` ([][]string) - This is an array of tuples of boot commands, to type when the virtual
+  machine is booted. The first element of the tuple is the actual boot
+  command. The second element of the tuple, which is optional, is a
+  description of what the boot command does. This is intended to be used for
+  interactive installers that requires many commands to complete the
+  installation. Both the command and the description will be printed when
+  logging is enabled. When debug mode is enabled Packer will pause after
+  typing each boot command. This will make it easier to follow along the
+  installation process and make sure the Packer and the installer are in
+  sync. `boot_steps` and `boot_commands` are mutually exclusive.
+  
+  Example:
+  
+  In HCL:
+  ```hcl
+  boot_steps = [
+    ["1<enter><wait5>", "Install NetBSD"],
+    ["a<enter><wait5>", "Installation messages in English"],
+    ["a<enter><wait5>", "Keyboard type: unchanged"],
+  
+    ["a<enter><wait5>", "Install NetBSD to hard disk"],
+    ["b<enter><wait5>", "Yes"]
+  ]
+  ```
+  
+  In JSON:
+  ```json
+  {
+    "boot_steps": [
+      ["1<enter><wait5>", "Install NetBSD"],
+      ["a<enter><wait5>", "Installation messages in English"],
+      ["a<enter><wait5>", "Keyboard type: unchanged"],
+  
+      ["a<enter><wait5>", "Install NetBSD to hard disk"],
+      ["b<enter><wait5>", "Yes"]
+    ]
+  }
+  ```
+
 - `disk_size` (uint) - The size, in megabytes, of the hard disk to create for the VM. By
   default, this is 40000 (about 40 GB).
 
@@ -9,6 +48,24 @@
 - `skip_export` (bool) - Defaults to false. When enabled, Packer will not export the VM. Useful
   if the build output is not the resultant image, but created inside the
   VM.
+
+- `vnc_bind_address` (string) - The IP address that should be
+  binded to for VNC. By default packer will use 127.0.0.1 for this. If you
+  wish to bind to all interfaces use 0.0.0.0.
+
+- `vnc_use_password` (bool) - Whether or not to set a password on the VNC server. This option
+  automatically enables the QMP socket. See `qmp_socket_path`. Defaults to
+  `false`.
+
+- `vnc_port_min` (int) - The minimum and maximum port
+  to use for VNC access to the virtual machine. The builder uses VNC to type
+  the initial boot_command. Because Packer generally runs in parallel,
+  Packer uses a randomly chosen port in this range that appears available. By
+  default this is 5900 to 6000. The minimum and maximum ports are inclusive.
+  The minimum port cannot be set below 5900 due to a quirk in how QEMU parses
+  vnc display address.
+
+- `vnc_port_max` (int) - VNC Port Max
 
 - `vm_arch` (string) - QEMU system architecture of the virtual machine.
   If this is a QEMU virtual machine, you must specify the architecture
