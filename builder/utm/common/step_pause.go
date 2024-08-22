@@ -15,13 +15,16 @@ import (
 // if the necessary steps are done.
 // Just a temporary step to pause the build process.
 
-type StepPause struct{}
+type StepPause struct {
+	Message string
+}
 
 func (s *StepPause) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packersdk.Ui)
 
-	// ask user to confirm if the necessary steps are done
-	confirmOption, err := ui.Ask("confirm you have done the necessary [Y/n]:")
+	// say and ask user to confirm if the necessary steps are done
+	ui.Say(s.Message)
+	confirmOption, err := ui.Ask("confirm you have done the necessary steps [Y/n]:")
 
 	if err != nil {
 		err := fmt.Errorf("error during export step: %s", err)
