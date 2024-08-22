@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/packer-plugin-sdk/plugin"
 
+	"github.com/naveenrajm7/packer-plugin-utm/builder/utm/iso"
 	"github.com/naveenrajm7/packer-plugin-utm/builder/utm/utm"
 	utmPPzip "github.com/naveenrajm7/packer-plugin-utm/post-processor/zip"
 	"github.com/naveenrajm7/packer-plugin-utm/version"
@@ -16,6 +17,7 @@ import (
 
 func main() {
 	pps := plugin.NewSet()
+	pps.RegisterBuilder("iso", new(iso.Builder))
 	pps.RegisterBuilder("utm", new(utm.Builder))
 	pps.RegisterPostProcessor("zip", new(utmPPzip.PostProcessor))
 	pps.SetVersion(version.PluginVersion)
