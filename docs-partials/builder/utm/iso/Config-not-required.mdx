@@ -10,6 +10,15 @@
   if the build output is not the resultant image, but created inside the
   VM.
 
+- `vm_arch` (string) - QEMU system architecture of the virtual machine.
+  If this is a QEMU virtual machine, you must specify the architecture
+  Which is required in confirguration. By default, this is aarch64.
+
+- `vm_backend` (string) - Backend to use for the virtual machine.
+  apple : Apple Virtualization.framework backend.
+  qemu : QEMU backend.
+  By default, this is qemu.
+
 - `vm_name` (string) - This is the name of the utm file for the new virtual machine, without
   the file extension. By default this is packer-BUILDNAME, where
   "BUILDNAME" is the name of the build.

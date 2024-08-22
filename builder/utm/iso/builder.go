@@ -36,6 +36,7 @@ type Config struct {
 	utmcommon.OutputConfig     `mapstructure:",squash"`
 	utmcommon.ShutdownConfig   `mapstructure:",squash"`
 	utmcommon.CommConfig       `mapstructure:",squash"`
+	utmcommon.HWConfig         `mapstructure:",squash"`
 	utmcommon.UtmVersionConfig `mapstructure:",squash"`
 	utmcommon.UtmBundleConfig  `mapstructure:",squash"`
 
@@ -49,6 +50,15 @@ type Config struct {
 	// if the build output is not the resultant image, but created inside the
 	// VM.
 	SkipExport bool `mapstructure:"skip_export" required:"false"`
+	// QEMU system architecture of the virtual machine.
+	// If this is a QEMU virtual machine, you must specify the architecture
+	// Which is required in confirguration. By default, this is aarch64.
+	VMArch string `mapstructure:"vm_arch" required:"false"`
+	// Backend to use for the virtual machine.
+	// apple : Apple Virtualization.framework backend.
+	// qemu : QEMU backend.
+	// By default, this is qemu.
+	VMBackend string `mapstructure:"vm_backend" required:"false"`
 	// This is the name of the utm file for the new virtual machine, without
 	// the file extension. By default this is packer-BUILDNAME, where
 	// "BUILDNAME" is the name of the build.
@@ -97,6 +107,24 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, []string, error) {
 		b.config.DiskSize = 40000
 	}
 
+	if b.config.VMArch == "" {
+		b.config.VMArch = "aarch64"
+	}
+
+	if b.config.VMBackend == "" {
+		b.config.VMBackend = "qemu"
+	}
+	// Validate and use Enums for the VM backend
+	switch b.config.VMBackend {
+	case "apple":
+		b.config.VMBackend = "ApPl"
+	case "qemu":
+		b.config.VMBackend = "QeMu"
+	default:
+		errs = packersdk.MultiErrorAppend(
+			errs, errors.New("vm_backend must be either 'apple' or 'qemu'"))
+	}
+
 	if b.config.VMName == "" {
 		b.config.VMName = fmt.Sprintf(
 			"packer-%s-%d", b.config.PackerBuildName, interpolate.InitTime.Unix())
@@ -120,7 +148,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 	// Create the driver that we'll use to communicate with UTM
 	driver, err := utmcommon.NewDriver()
 	if err != nil {
-		return nil, fmt.Errorf("Failed creating UTM driver: %s", err)
+		return nil, fmt.Errorf("failed creating UTM driver: %s", err)
 	}
 
 	steps := []multistep.Step{
@@ -143,6 +171,12 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			DebugKeyPath: fmt.Sprintf("%s.pem", b.config.PackerBuildName),
 			Comm:         &b.config.Comm,
 		},
+		new(stepCreateVM),
+		new(stepCreateDisk),
+		&utmcommon.StepAttachISOs{
+			AttachBootISO: true,
+		},
+		&utmcommon.StepPause{},
 		&utmcommon.StepPortForwarding{
 			CommConfig:     &b.config.CommConfig.Comm,
 			HostPortMin:    b.config.HostPortMin,
@@ -198,11 +232,11 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 
 	// If we were interrupted or cancelled, then just exit.
 	if _, ok := state.GetOk(multistep.StateCancelled); ok {
-		return nil, errors.New("Build was cancelled.")
+		return nil, errors.New("build was cancelled")
 	}
 
 	if _, ok := state.GetOk(multistep.StateHalted); ok {
-		return nil, errors.New("Build was halted.")
+		return nil, errors.New("build was halted")
 	}
 
 	generatedData := map[string]interface{}{"generated_data": state.Get("generated_data")}
