@@ -88,6 +88,9 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 		},
 		&utmcommon.StepRun{},
 		&stepTypeBootCommand{},
+		&utmcommon.StepPause{
+			Message: "Confirm Install in complete and VM is running",
+		},
 		&communicator.StepConnect{
 			Config:    &b.config.CommConfig.Comm,
 			Host:      utmcommon.CommHost(b.config.CommConfig.Comm.Host()),
