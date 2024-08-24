@@ -73,9 +73,6 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 		// &utmcommon.StepAttachISOs{
 		// 	AttachBootISO: true,
 		// },
-		&utmcommon.StepPause{
-			Message: "UTM Bug: Update ISO with same ISO, so we don't get file not found error",
-		},
 		&utmcommon.StepPortForwarding{
 			CommConfig:             &b.config.CommConfig.Comm,
 			HostPortMin:            b.config.HostPortMin,
