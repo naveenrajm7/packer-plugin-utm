@@ -68,10 +68,11 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			Comm:         &b.config.Comm,
 		},
 		new(stepCreateVM),
-		new(stepCreateDisk),
-		&utmcommon.StepAttachISOs{
-			AttachBootISO: true,
-		},
+		// if more disk or ISO is needed then add the following steps
+		// new(stepCreateDisk),
+		// &utmcommon.StepAttachISOs{
+		// 	AttachBootISO: true,
+		// },
 		&utmcommon.StepPause{
 			Message: "UTM Bug: Update ISO with same ISO, so we don't get file not found error",
 		},

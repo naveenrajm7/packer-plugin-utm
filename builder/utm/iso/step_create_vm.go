@@ -26,19 +26,25 @@ func (s *stepCreateVM) Run(ctx context.Context, state multistep.StateBag) multis
 
 	name := config.VMName
 
+	isoPath := state.Get("iso_path").(string)
+
 	commands := [][]string{}
 	commands = append(commands, []string{
 		"create_vm.applescript", "--name", name,
 		"--backend", config.VMBackend,
 		"--arch", config.VMArch,
+		"--iso", isoPath,
+		"--size", strconv.FormatUint(uint64(config.DiskSize), 10),
 	})
 
-	// customize
-	commands = append(commands, []string{
-		"customize_vm.applescript", name,
-		"--cpus", strconv.Itoa(config.HWConfig.CpuCount),
-		"--memory", strconv.Itoa(config.HWConfig.MemorySize),
-	})
+	// UTM Bug: after ISO is attached, setting update will error
+	// Uncomment this once UTM > 4.5.3 is released
+	// // customize
+	// commands = append(commands, []string{
+	// 	"customize_vm.applescript", name,
+	// 	"--cpus", strconv.Itoa(config.HWConfig.CpuCount),
+	// 	"--memory", strconv.Itoa(config.HWConfig.MemorySize),
+	// })
 
 	ui.Say("Creating virtual machine...")
 	for _, command := range commands {
