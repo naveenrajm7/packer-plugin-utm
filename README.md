@@ -7,7 +7,7 @@ to create custom images. For the full list of available features for this plugin
 ### Using Packer
 
 ```
-packer plugins install github.com/naveenrajm7/utm v0.3.3
+packer plugins install github.com/naveenrajm7/utm
 ```
 
 ### Using pre-built releases
