@@ -4,7 +4,6 @@
 package common
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -30,11 +29,11 @@ func TestOutputConfigPrepare(t *testing.T) {
 }
 
 func TestOutputConfigPrepare_exists(t *testing.T) {
-	td, err := ioutil.TempDir("", "packer")
+	td, err := os.MkdirTemp("", "packer")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.RemoveAll(td)
+	defer func() { _ = os.RemoveAll(td) }()
 
 	c := new(OutputConfig)
 	c.OutputDir = td

@@ -11,3 +11,5 @@ docs.zip
 
 # MacOS
 .DS_Store
+.serena
+.vscode

@@ -53,11 +53,11 @@ func (s *StepCreateCD) Run(ctx context.Context, state multistep.StateBag) multis
 	CDF, err := tmp.File("packer*.iso")
 	// Set the path so we can remove it later
 	CDPath := CDF.Name()
-	CDF.Close()
-	os.Remove(CDPath)
+	_ = CDF.Close()
+	_ = os.Remove(CDPath)
 	if err != nil {
 		state.Put("error",
-			fmt.Errorf("Error creating temporary file for CD: %s", err))
+			fmt.Errorf("error creating temporary file for CD: %s", err))
 		return multistep.ActionHalt
 	}
 
@@ -69,7 +69,7 @@ func (s *StepCreateCD) Run(ctx context.Context, state multistep.StateBag) multis
 	rootFolder, err := tmp.Dir("packer_to_cdrom")
 	if err != nil {
 		state.Put("error",
-			fmt.Errorf("Error creating temporary file for CD: %s", err))
+			fmt.Errorf("error creating temporary file for CD: %s", err))
 		return multistep.ActionHalt
 	}
 	s.rootFolder = rootFolder
@@ -78,7 +78,7 @@ func (s *StepCreateCD) Run(ctx context.Context, state multistep.StateBag) multis
 		err = s.AddFile(rootFolder, toAdd)
 		if err != nil {
 			state.Put("error",
-				fmt.Errorf("Error creating temporary file for CD: %s", err))
+				fmt.Errorf("error creating temporary file for CD: %s", err))
 			return multistep.ActionHalt
 		}
 	}
@@ -87,7 +87,7 @@ func (s *StepCreateCD) Run(ctx context.Context, state multistep.StateBag) multis
 		err = s.AddContent(rootFolder, path, content)
 		if err != nil {
 			state.Put("error",
-				fmt.Errorf("Error creating temporary file for CD: %s", err))
+				fmt.Errorf("error creating temporary file for CD: %s", err))
 			return multistep.ActionHalt
 		}
 	}
@@ -104,7 +104,7 @@ func (s *StepCreateCD) Run(ctx context.Context, state multistep.StateBag) multis
 		return multistep.ActionHalt
 	}
 
-	ui.Message("Done copying paths from CD_dirs")
+	ui.Say("Done copying paths from CD_dirs")
 
 	// Set the path to the CD so it can be used later
 	state.Put("cd_path", CDPath)
@@ -119,11 +119,11 @@ func (s *StepCreateCD) Run(ctx context.Context, state multistep.StateBag) multis
 
 func (s *StepCreateCD) Cleanup(multistep.StateBag) {
 	if s.rootFolder != "" {
-		os.RemoveAll(s.rootFolder)
+		_ = os.RemoveAll(s.rootFolder)
 	}
 	if s.CDPath != "" {
 		log.Printf("Deleting CD disk: %s", s.CDPath)
-		os.Remove(s.CDPath)
+		_ = os.Remove(s.CDPath)
 	}
 }
 
@@ -225,7 +225,7 @@ func retrieveCDISOCreationCommand(label string, source string, dest string) (*ex
 func (s *StepCreateCD) AddFile(dst, src string) error {
 	finfo, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("Error adding path to CD: %s", err)
+		return fmt.Errorf("error adding path to CD: %s", err)
 	}
 
 	// add a file
@@ -234,17 +234,17 @@ func (s *StepCreateCD) AddFile(dst, src string) error {
 		if err != nil {
 			return err
 		}
-		defer inputF.Close()
+		defer func() { _ = inputF.Close() }()
 
 		// Create a new file in the root directory
 		dest, err := os.Create(filepath.Join(dst, finfo.Name()))
 		if err != nil {
-			return fmt.Errorf("Error opening file for copy %s to CD root", src)
+			return fmt.Errorf("error opening file for copy %s to CD root", src)
 		}
-		defer dest.Close()
+		defer func() { _ = dest.Close() }()
 		nBytes, err := io.Copy(dest, inputF)
 		if err != nil {
-			return fmt.Errorf("Error copying %s to CD root", src)
+			return fmt.Errorf("error copying %s to CD root", src)
 		}
 		log.Printf("Wrote %d bytes to %s", nBytes, finfo.Name())
 		return err
@@ -278,16 +278,16 @@ func (s *StepCreateCD) AddFile(dst, src string) error {
 			if err != nil {
 				return err
 			}
-			defer inputF.Close()
+			defer func() { _ = inputF.Close() }()
 
 			fileDst, err := os.Create(dstPath)
 			if err != nil {
-				return fmt.Errorf("Error opening file %s on CD: %s", dstPath, err)
+				return fmt.Errorf("error opening file %s on CD: %s", dstPath, err)
 			}
-			defer fileDst.Close()
+			defer func() { _ = fileDst.Close() }()
 			nBytes, err := io.Copy(fileDst, inputF)
 			if err != nil {
-				return fmt.Errorf("Error copying %s to CD: %s", dstPath, err)
+				return fmt.Errorf("error copying %s to CD: %s", dstPath, err)
 			}
 			log.Printf("Wrote %d bytes to %s", nBytes, dstPath)
 			return err
@@ -318,7 +318,7 @@ func (s *StepCreateCD) AddContent(dst, path, content string) error {
 	}
 	err = os.WriteFile(dstPath, []byte(content), 0666)
 	if err != nil {
-		return fmt.Errorf("Error writing file %s on CD: %s", path, err)
+		return fmt.Errorf("error writing file %s on CD: %s", path, err)
 	}
 	return nil
 }

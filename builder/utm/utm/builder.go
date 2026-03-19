@@ -37,7 +37,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 	// Create the driver that we'll use to communicate with UTM
 	driver, err := utmcommon.NewDriver()
 	if err != nil {
-		return nil, fmt.Errorf("Failed creating UTM driver: %s", err)
+		return nil, fmt.Errorf("failed creating UTM driver: %s", err)
 	}
 
 	// Set up the state
@@ -72,16 +72,16 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			KeepRegistered: b.config.KeepRegistered,
 		},
 		&utmcommon.StepPortForwarding{
-			CommConfig:     &b.config.CommConfig.Comm,
+			CommConfig:     &b.config.Comm,
 			HostPortMin:    b.config.HostPortMin,
 			HostPortMax:    b.config.HostPortMax,
 			SkipNatMapping: b.config.SkipNatMapping,
 		},
 		&utmcommon.StepRun{},
 		&communicator.StepConnect{
-			Config:    &b.config.CommConfig.Comm,
-			Host:      utmcommon.CommHost(b.config.CommConfig.Comm.Host()),
-			SSHConfig: b.config.CommConfig.Comm.SSHConfigFunc(),
+			Config:    &b.config.Comm,
+			Host:      utmcommon.CommHost(b.config.Comm.Host()),
+			SSHConfig: b.config.Comm.SSHConfigFunc(),
 			SSHPort:   utmcommon.CommPort,
 			WinRMPort: utmcommon.CommPort,
 		},
@@ -90,7 +90,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 		},
 		new(commonsteps.StepProvision),
 		&commonsteps.StepCleanupTempKeys{
-			Comm: &b.config.CommConfig.Comm,
+			Comm: &b.config.Comm,
 		},
 		&utmcommon.StepShutdown{
 			Command:         b.config.ShutdownCommand,

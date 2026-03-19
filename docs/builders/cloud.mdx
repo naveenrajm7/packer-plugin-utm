@@ -121,6 +121,29 @@ necessary for this build to succeed and can be found further down the page.
 
 @include 'builder/utm/common/CommConfig-not-required.mdx'
 
+### QEMU arguments configuration
+
+Additional QEMU arguments can be passed to the VM to enable hardware
+acceleration or other QEMU features. This is particularly useful for
+enabling Apple's Hypervisor.framework (HVF) acceleration.
+
+#### Optional:
+
+@include 'builder/utm/common/QemuConfig-not-required.mdx'
+
+#### Example: Enabling HVF Acceleration
+
+```hcl
+source "utm-cloud" "accelerated" {
+  # ... other config ...
+  hypervisor = true
+  qemuargs = [
+    ["-accel", "hvf"],
+    ["-cpu", "host"],
+  ]
+}
+```
+
 ### No Pause configuration
 
 @include 'builder/utm/common/NoPauseConfig.mdx'

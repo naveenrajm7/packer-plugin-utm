@@ -57,7 +57,7 @@ func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multiste
 	// Clear out the Packer-created forwarding rule
 	commPort := state.Get("commHostPort")
 	if !s.SkipNatMapping && commPort != 0 {
-		ui.Message(fmt.Sprintf(
+		ui.Say(fmt.Sprintf(
 			"Deleting forwarded port mapping for the communicator (SSH, WinRM, etc) (host port %d)", commPort))
 		// Assert that commPort is of type int
 		commPortInt, ok := commPort.(int)
@@ -79,26 +79,19 @@ func (s *StepExport) Run(ctx context.Context, state multistep.StateBag) multiste
 		}
 	}
 
-	// Clear out the Packer-created qemu additional argument
-	qemuAdditionalArg := state.Get("qemuAdditionalArg")
-	if qemuAdditionalArg != nil {
-		ui.Message(fmt.Sprintf(
-			"Removing VNC QEMU additional argument %s", qemuAdditionalArg))
-		// Assert that qemuAdditionalArg is of type string
-		qemuAdditionalArgStr, ok := qemuAdditionalArg.(string)
-		if !ok {
-			err := fmt.Errorf("vncQemuArg is not of type string")
-			state.Put("error", err)
-			ui.Error(err.Error())
-			return multistep.ActionHalt
-		}
+	// Clear out all Packer-created build-time QEMU additional arguments
+	buildTimeArgs, _ := state.Get("buildTimeQemuArgs").([]string)
+	if len(buildTimeArgs) > 0 {
+		ui.Say(fmt.Sprintf(
+			"Removing %d build-time QEMU additional argument(s)", len(buildTimeArgs)))
 		removeQemuArgsCommand := []string{
 			"remove_qemu_additional_args.applescript", vmId,
-			"--args", qemuAdditionalArgStr,
+			"--args",
 		}
+		removeQemuArgsCommand = append(removeQemuArgsCommand, buildTimeArgs...)
 		_, err := driver.ExecuteOsaScript(removeQemuArgsCommand...)
 		if err != nil {
-			err := fmt.Errorf("error removing QEMU additional arguments: %s", err)
+			err := fmt.Errorf("error removing build-time QEMU additional arguments: %s", err)
 			state.Put("error", err)
 			ui.Error(err.Error())
 			return multistep.ActionHalt

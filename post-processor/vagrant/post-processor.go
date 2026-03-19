@@ -13,7 +13,6 @@ import (
 	"compress/flate"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -147,11 +146,11 @@ func (p *PostProcessor) PostProcessProvider(name string, provider Provider, ui p
 	if err != nil {
 		return nil, false, err
 	}
-	defer os.RemoveAll(dir)
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	// Copy all of the includes files into the temporary directory
 	for _, src := range config.Include {
-		ui.Message(fmt.Sprintf("Copying from include: %s", src))
+		ui.Say(fmt.Sprintf("Copying from include: %s", src))
 		dst := filepath.Join(dir, filepath.Base(src))
 		if err := CopyContents(dst, src); err != nil {
 			err = fmt.Errorf("error copying include file: %s\n\n%s", src, err)
@@ -176,8 +175,8 @@ func (p *PostProcessor) PostProcessProvider(name string, provider Provider, ui p
 	// Write our Vagrantfile
 	var customVagrantfile string
 	if config.VagrantfileTemplate != "" {
-		ui.Message(fmt.Sprintf("Using custom Vagrantfile: %s", config.VagrantfileTemplate))
-		customBytes, err := ioutil.ReadFile(config.VagrantfileTemplate)
+		ui.Say(fmt.Sprintf("Using custom Vagrantfile: %s", config.VagrantfileTemplate))
+		customBytes, err := os.ReadFile(config.VagrantfileTemplate)
 		if err != nil {
 			return nil, false, err
 		}
@@ -198,7 +197,7 @@ func (p *PostProcessor) PostProcessProvider(name string, provider Provider, ui p
 		ProviderVagrantfile: vagrantfile,
 		CustomVagrantfile:   customVagrantfile,
 	})
-	f.Close()
+	_ = f.Close()
 	if err != nil {
 		return nil, false, err
 	}

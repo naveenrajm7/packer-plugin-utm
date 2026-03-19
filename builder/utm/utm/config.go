@@ -97,7 +97,7 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 	// errs = packersdk.MultiErrorAppend(errs, c.RunConfig.Prepare(&c.ctx)...)
 	errs = packersdk.MultiErrorAppend(errs, c.ShutdownConfig.Prepare(&c.ctx)...)
 	errs = packersdk.MultiErrorAppend(errs, c.CommConfig.Prepare(&c.ctx)...)
-	errs = packersdk.MultiErrorAppend(errs, c.UtmVersionConfig.Prepare(c.CommConfig.Comm.Type)...)
+	errs = packersdk.MultiErrorAppend(errs, c.UtmVersionConfig.Prepare(c.Comm.Type)...)
 
 	if c.SourcePath == "" {
 		errs = packersdk.MultiErrorAppend(errs, fmt.Errorf("source_path is required"))

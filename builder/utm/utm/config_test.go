@@ -4,7 +4,6 @@
 package utm
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -18,11 +17,11 @@ func testConfig(t *testing.T) map[string]interface{} {
 }
 
 func getTempFile(t *testing.T) *os.File {
-	tf, err := ioutil.TempFile("", "packer")
+	tf, err := os.CreateTemp("", "packer")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	tf.Close()
+	_ = tf.Close()
 
 	// don't forget to cleanup the file downstream:
 	// defer os.Remove(tf.Name())
@@ -45,7 +44,7 @@ func TestNewConfig_sourcePath(t *testing.T) {
 
 	// Good
 	tf := getTempFile(t)
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 
 	cfg = testConfig(t)
 	cfg["source_path"] = tf.Name()
@@ -61,7 +60,7 @@ func TestNewConfig_sourcePath(t *testing.T) {
 func TestNewConfig_shutdown_timeout(t *testing.T) {
 	cfg := testConfig(t)
 	tf := getTempFile(t)
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 
 	// Expect this to fail
 	cfg["source_path"] = tf.Name()

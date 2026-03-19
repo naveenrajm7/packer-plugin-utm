@@ -107,10 +107,18 @@ func (s *stepConfigureCloudSeed) configureCloudInitHTTP(ctx context.Context, sta
 	// Add Qemu args to send cloud init seed file
 	ui.Say("Configuring VM to send cloud init seed file...")
 	cloudQemuArg := fmt.Sprintf("-smbios type=1,serial=ds=nocloud-net;seedfrom=http://%s:%d/", hostIP, httpPort)
+
+	// Collect all args: user qemuargs (already set) + cloud-init arg
+	// IMPORTANT: The AppleScript replaces (not appends) all QEMU additional args,
+	// so we must re-include any previously-set user args.
 	addQemuArgsCommand := []string{
 		"add_qemu_additional_args.applescript", vmId,
-		"--args", cloudQemuArg,
+		"--args",
 	}
+	if userArgs, ok := state.Get("userQemuArgs").([]string); ok {
+		addQemuArgsCommand = append(addQemuArgsCommand, userArgs...)
+	}
+	addQemuArgsCommand = append(addQemuArgsCommand, cloudQemuArg)
 
 	ui.Say("Adding QEMU additional arguments...")
 	_, err := driver.ExecuteOsaScript(addQemuArgsCommand...)
@@ -120,8 +128,10 @@ func (s *stepConfigureCloudSeed) configureCloudInitHTTP(ctx context.Context, sta
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
-	// Save the Cloud QEMU argument for later cleanup
-	state.Put("qemuAdditionalArg", cloudQemuArg)
+	// Append the Cloud QEMU argument to build-time args for later cleanup
+	buildTimeArgs, _ := state.Get("buildTimeQemuArgs").([]string)
+	buildTimeArgs = append(buildTimeArgs, cloudQemuArg)
+	state.Put("buildTimeQemuArgs", buildTimeArgs)
 
 	return multistep.ActionContinue
 }

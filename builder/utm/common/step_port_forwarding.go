@@ -60,7 +60,7 @@ func (s *StepPortForwarding) Run(ctx context.Context, state multistep.StateBag) 
 			ui.Error(err.Error())
 			return multistep.ActionHalt
 		}
-		s.l.Listener.Close() // free port, but don't unlock lock file
+		_ = s.l.Listener.Close() // free port, but don't unlock lock file
 		commHostPort = s.l.Port
 
 		// Clear network interfaces and add new ones.

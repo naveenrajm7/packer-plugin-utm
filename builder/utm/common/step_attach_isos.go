@@ -16,9 +16,9 @@ import (
 //
 // ISOs are attached in a specific order to ensure predictable drive letter
 // assignment in Windows guests:
-//   1. boot_iso - The installation ISO (typically C: after install, but mounted first)
-//   2. cd_files - User-provided files ISO (typically D: in Windows)
-//   3. guest_additions - UTM guest tools ISO (typically E: in Windows)
+//  1. boot_iso - The installation ISO (typically C: after install, but mounted first)
+//  2. cd_files - User-provided files ISO (typically D: in Windows)
+//  3. guest_additions - UTM guest tools ISO (typically E: in Windows)
 //
 // This ordering is critical for Windows installations where scripts may depend
 // on knowing which drive letter to use for accessing files or running installers.
@@ -112,7 +112,7 @@ func (s *StepAttachISOs) Run(ctx context.Context, state multistep.StateBag) mult
 	}
 
 	if len(disksToMount) == 0 {
-		ui.Message("No ISOs to mount; continuing...")
+		ui.Say("No ISOs to mount; continuing...")
 		return multistep.ActionContinue
 	}
 
@@ -139,13 +139,13 @@ func (s *StepAttachISOs) Run(ctx context.Context, state multistep.StateBag) mult
 		switch diskCategory {
 		case "boot_iso":
 			controllerName = s.ISOInterface
-			ui.Message("Mounting boot ISO...")
+			ui.Say("Mounting boot ISO...")
 		case "guest_additions":
 			controllerName = s.GuestAdditionsInterface
-			ui.Message("Mounting guest additions ISO...")
+			ui.Say("Mounting guest additions ISO...")
 		case "cd_files":
 			controllerName = "usb"
-			ui.Message("Mounting cd_files ISO...")
+			ui.Say("Mounting cd_files ISO...")
 		}
 
 		// Convert controllerName to the corresponding enum code

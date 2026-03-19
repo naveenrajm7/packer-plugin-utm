@@ -36,8 +36,8 @@ func (s *stepCreateCloudDisk) Run(ctx context.Context, state multistep.StateBag)
 	TMPF, err := tmp.File("packer*.iso")
 	// Set the path so we can remove it later
 	TMPPath := TMPF.Name()
-	TMPF.Close()
-	os.Remove(TMPPath)
+	_ = TMPF.Close()
+	_ = os.Remove(TMPPath)
 	if err != nil {
 		state.Put("error",
 			fmt.Errorf("error creating temporary file for Cloud image: %s", err))
@@ -142,13 +142,13 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer func() { _ = sourceFile.Close() }()
 
 	destinationFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destinationFile.Close()
+	defer func() { _ = destinationFile.Close() }()
 
 	_, err = io.Copy(destinationFile, sourceFile)
 	return err

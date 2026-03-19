@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/packer-plugin-sdk/bootcommand"
@@ -42,12 +43,12 @@ type stepTypeBootCommand struct{}
 
 func (s *stepTypeBootCommand) Run(ctx context.Context, state multistep.StateBag) multistep.StepAction {
 	config := state.Get("config").(*Config)
-	if config.VNCConfig.DisableVNC {
+	if config.DisableVNC {
 		log.Println("Skipping boot command step...")
 		return multistep.ActionContinue
 	}
 
-	command := config.VNCConfig.FlatBootCommand()
+	command := config.FlatBootCommand()
 	bootSteps := config.BootSteps
 
 	if len(command) > 0 {
@@ -87,14 +88,14 @@ func typeBootCommands(ctx context.Context, state multistep.StateBag, bootSteps [
 	// Connect to VNC
 	ui.Say(fmt.Sprintf("Connecting to VM via VNC (%s:%d)", vncIP, vncPort))
 
-	nc, err := net.Dial("tcp", fmt.Sprintf("%s:%d", vncIP, vncPort))
+	nc, err := net.Dial("tcp", net.JoinHostPort(vncIP, strconv.Itoa(vncPort)))
 	if err != nil {
 		err := fmt.Errorf("error connecting to VNC: %s", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
-	defer nc.Close()
+	defer func() { _ = nc.Close() }()
 
 	var auth []vnc.ClientAuth
 
@@ -111,12 +112,12 @@ func typeBootCommands(ctx context.Context, state multistep.StateBag, bootSteps [
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
-	defer c.Close()
+	defer func() { _ = c.Close() }()
 
 	log.Printf("Connected to VNC desktop: %s", c.DesktopName)
 
 	hostIP := state.Get("http_ip").(string)
-	SSHPublicKey := string(config.CommConfig.Comm.SSHPublicKey)
+	SSHPublicKey := string(config.Comm.SSHPublicKey)
 	configCtx := config.ctx
 	configCtx.Data = &bootCommandTemplateData{
 		hostIP,
@@ -125,7 +126,7 @@ func typeBootCommands(ctx context.Context, state multistep.StateBag, bootSteps [
 		SSHPublicKey,
 	}
 
-	d := bootcommand.NewVNCDriver(c, config.VNCConfig.BootKeyInterval)
+	d := bootcommand.NewVNCDriver(c, config.BootKeyInterval)
 
 	ui.Say("Typing the boot commands over VNC...")
 

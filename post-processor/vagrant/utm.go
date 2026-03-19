@@ -33,14 +33,14 @@ func (p *UtmProvider) Process(ui packersdk.Ui, artifact packersdk.Artifact, dir 
 		return
 	}
 
-	ui.Message(fmt.Sprintf("Copying .utm directory from artifact: %s", utmDir))
+	ui.Say(fmt.Sprintf("Copying .utm directory from artifact: %s", utmDir))
 	dstPath := filepath.Join(dir, filepath.Base(utmDir))
 	if err = CopyDirectoryContents(dstPath, utmDir); err != nil {
 		return
 	}
 
 	// Rename the UTM file to box.utm, as required by Vagrant
-	ui.Message("Renaming the UTM to box.utm...")
+	ui.Say("Renaming the UTM to box.utm...")
 	utmDirPath := filepath.Join(dir, filepath.Base(utmDir))
 	boxUtmPath := filepath.Join(dir, "box.utm")
 	if err = os.Rename(utmDirPath, boxUtmPath); err != nil {
@@ -53,9 +53,3 @@ func (p *UtmProvider) Process(ui packersdk.Ui, artifact packersdk.Artifact, dir 
 
 	return
 }
-
-var utmVagrantfile = `
-Vagrant.configure("2") do |config|
-  config.vm.base_mac = "%s"
-end
-`

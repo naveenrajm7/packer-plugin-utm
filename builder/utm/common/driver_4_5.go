@@ -3,7 +3,6 @@ package common
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"os/exec"
 	"path/filepath"
@@ -52,8 +51,8 @@ func (d *Utm45Driver) ExecuteOsaScript(command ...string) (string, error) {
 	}
 
 	go func() {
-		defer stdin.Close()
-		io.WriteString(stdin, string(scriptContent))
+		defer func() { _ = stdin.Close() }()
+		_, _ = stdin.Write(scriptContent)
 	}()
 
 	var stdout, stderr bytes.Buffer

@@ -1,0 +1,26 @@
+<!-- Code generated from the comments of the QemuConfig struct in builder/utm/common/qemu_config.go; DO NOT EDIT MANUALLY -->
+
+- `qemuargs` ([][]string) - Arbitrary QEMU arguments that are passed to the UTM virtual machine
+  as QEMU additional arguments. Each element is a list of strings
+  that are joined with a space to form a single QEMU argument.
+  These arguments persist in the exported VM.
+  
+  Usage example:
+  
+  In JSON:
+  ```json
+  "qemuargs": [
+    ["-accel", "hvf"],
+    ["-cpu", "host"]
+  ]
+  ```
+  
+  In HCL2:
+  ```hcl
+  qemuargs = [
+    ["-accel", "hvf"],
+    ["-cpu", "host"],
+  ]
+  ```
+
+<!-- End of code generated from the comments of the QemuConfig struct in builder/utm/common/qemu_config.go; -->

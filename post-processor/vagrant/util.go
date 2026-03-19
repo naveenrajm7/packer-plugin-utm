@@ -31,7 +31,7 @@ func CopyContents(dst, src string) error {
 	if err != nil {
 		return err
 	}
-	defer srcF.Close()
+	defer func() { _ = srcF.Close() }()
 
 	dstDir, _ := filepath.Split(dst)
 	if dstDir != "" {
@@ -45,7 +45,7 @@ func CopyContents(dst, src string) error {
 	if err != nil {
 		return err
 	}
-	defer dstF.Close()
+	defer func() { _ = dstF.Close() }()
 
 	if _, err := io.Copy(dstF, srcF); err != nil {
 		return err
@@ -108,7 +108,7 @@ func DirToBox(dst, dir string, ui packersdk.Ui, level int) error {
 	if err != nil {
 		return err
 	}
-	defer dstF.Close()
+	defer func() { _ = dstF.Close() }()
 
 	var dstWriter io.WriteCloser = dstF
 	if level != flate.NoCompression {
@@ -117,13 +117,13 @@ func DirToBox(dst, dir string, ui packersdk.Ui, level int) error {
 		if err != nil {
 			return err
 		}
-		defer gzipWriter.Close()
+		defer func() { _ = gzipWriter.Close() }()
 
 		dstWriter = gzipWriter
 	}
 
 	tarWriter := tar.NewWriter(dstWriter)
-	defer tarWriter.Close()
+	defer func() { _ = tarWriter.Close() }()
 
 	// This is the walk func that tars each of the files in the dir
 	tarWalk := func(path string, info os.FileInfo, prevErr error) error {
@@ -143,7 +143,7 @@ func DirToBox(dst, dir string, ui packersdk.Ui, level int) error {
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 
 		header, err := tar.FileInfoHeader(info, "")
 		if err != nil {
@@ -164,7 +164,7 @@ func DirToBox(dst, dir string, ui packersdk.Ui, level int) error {
 		}
 
 		if ui != nil {
-			ui.Message(fmt.Sprintf("Compressing: %s", header.Name))
+			ui.Say(fmt.Sprintf("Compressing: %s", header.Name))
 		}
 
 		if err := tarWriter.WriteHeader(header); err != nil {
@@ -194,7 +194,7 @@ func CreateDummyBox(ui packersdk.Ui, level int) error {
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Write some dummy metadata for the box
 	if err := WriteMetadata(tempDir, make(map[string]string)); err != nil {
@@ -206,8 +206,8 @@ func CreateDummyBox(ui packersdk.Ui, level int) error {
 	if err != nil {
 		return err
 	}
-	defer tempBox.Close()
-	defer os.Remove(tempBox.Name())
+	defer func() { _ = tempBox.Close() }()
+	defer func() { _ = os.Remove(tempBox.Name()) }()
 	if err := DirToBox(tempBox.Name(), tempDir, nil, level); err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func WriteMetadata(dir string, contents interface{}) error {
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 
 		enc := json.NewEncoder(f)
 		return enc.Encode(contents)

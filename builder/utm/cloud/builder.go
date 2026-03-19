@@ -63,9 +63,9 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			Path:  b.config.OutputDir,
 		},
 		&StepCreateCD{
-			Files:   b.config.CDConfig.CDFiles,
-			Content: b.config.CDConfig.CDContent,
-			Label:   b.config.CDConfig.CDLabel,
+			Files:   b.config.CDFiles,
+			Content: b.config.CDContent,
+			Label:   b.config.CDLabel,
 		},
 		new(utmcommon.StepHTTPIPDiscover),
 		commonsteps.HTTPServerFromHTTPConfig(&b.config.HTTPConfig),
@@ -84,10 +84,13 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			Hypervisor:     b.config.Hypervisor,
 			KeepRegistered: b.config.KeepRegistered,
 		},
+		&utmcommon.StepConfigureQemuArgs{
+			QemuArgs: b.config.QemuArgs,
+		},
 		// This step creates a disk from source (cloud image) and attaches it to the VM
 		new(stepCreateCloudDisk),
 		&utmcommon.StepPortForwarding{
-			CommConfig:             &b.config.CommConfig.Comm,
+			CommConfig:             &b.config.Comm,
 			HostPortMin:            b.config.HostPortMin,
 			HostPortMax:            b.config.HostPortMax,
 			SkipNatMapping:         b.config.SkipNatMapping,
@@ -107,9 +110,9 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 			NoPause: b.config.BootNoPause,
 		},
 		&communicator.StepConnect{
-			Config:    &b.config.CommConfig.Comm,
-			Host:      utmcommon.CommHost(b.config.CommConfig.Comm.Host()),
-			SSHConfig: b.config.CommConfig.Comm.SSHConfigFunc(),
+			Config:    &b.config.Comm,
+			Host:      utmcommon.CommHost(b.config.Comm.Host()),
+			SSHConfig: b.config.Comm.SSHConfigFunc(),
 			SSHPort:   utmcommon.CommPort,
 			WinRMPort: utmcommon.CommPort,
 		},
@@ -118,7 +121,7 @@ func (b *Builder) Run(ctx context.Context, ui packersdk.Ui, hook packersdk.Hook)
 		},
 		new(commonsteps.StepProvision),
 		&commonsteps.StepCleanupTempKeys{
-			Comm: &b.config.CommConfig.Comm,
+			Comm: &b.config.Comm,
 		},
 		&utmcommon.StepShutdown{
 			Command:         b.config.ShutdownCommand,

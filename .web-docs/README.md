@@ -20,7 +20,7 @@ packer {
 Alternatively, you can use `packer plugins install` to manage installation of this plugin.
 
 ```sh
-$ packer plugins install github.com/naveenrajm7/utm
+packer plugins install github.com/naveenrajm7/utm
 ```
 
 ### Components
@@ -30,28 +30,28 @@ The following UTM Builders and post-processors are supported.
 
 #### Builders
 
-- [utm-iso](builders/iso.mdx) - Starts from an ISO file, creates a brand-new UTM VM, installs an OS, provisions software within the OS, then exports that machine to create an image. 
+- [utm-iso](builders/iso.mdx) - Starts from an ISO file, creates a brand-new UTM VM, installs an OS, provisions software within the OS, then exports that machine to create an image.
 This is best for people who want to start from scratch.
 
 - [utm-cloud](builders/cloud.mdx) - This builder imports
-  an existing qcow2 file with cloud-init (cloud image), 
-  feeds in your custom cloud-init seed file, 
-  runs provisioners on top of that VM, 
-  and exports that machine to create an UTM image (.utm). 
+  an existing qcow2 file with cloud-init (cloud image),
+  feeds in your custom cloud-init seed file,
+  runs provisioners on top of that VM,
+  and exports that machine to create an UTM image (.utm).
   This is best for people who want to start off or test with cloud images,
   which are provided by most popular distros.
 
 - [utm-utm](builders/utm.mdx) - This builder uses an existing UTM VM to run defined provisioners on top of that VM.
   This is best if you have an existing
-  UTM VM export you want to use as the source. 
-  As an additional benefit, 
+  UTM VM export you want to use as the source.
+  As an additional benefit,
   you can feed the artifact of this builder back into itself to
   iterate on a machine.
 
 #### Post-processors
 
-- [utm-zip](post-processors/zip.mdx) - The utm zip post-processor is 
-simplied version of The Packer compress zip post-processor modified to accept utm directory. This post-processor takes 
+- [utm-zip](post-processors/zip.mdx) - The utm zip post-processor is
+simplied version of The Packer compress zip post-processor modified to accept utm directory. This post-processor takes
 in the artifact from UTM builders and zips up the UTM directory, which
 can be used to share and import VMs in UTM.
 You can use the zip version of UTM VM in UTM through [`downloadVM?url=...`](https://docs.getutm.app/advanced/remote-control/)

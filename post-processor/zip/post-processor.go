@@ -68,7 +68,7 @@ func (p *PostProcessor) Configure(raws ...interface{}) error {
 
 	if err = interpolate.Validate(p.config.OutputPath, &p.config.ctx); err != nil {
 		errs = packersdk.MultiErrorAppend(
-			errs, fmt.Errorf("Error parsing target template: %s", err))
+			errs, fmt.Errorf("error parsing target template: %s", err))
 	}
 
 	if len(errs.Errors) > 0 {
@@ -102,7 +102,7 @@ func (p *PostProcessor) PostProcess(
 
 	target, err := interpolate.Render(p.config.OutputPath, &p.config.ctx)
 	if err != nil {
-		return nil, false, false, fmt.Errorf("Error interpolating output value: %s", err)
+		return nil, false, false, fmt.Errorf("error interpolating output value: %s", err)
 	} else {
 		fmt.Println(target)
 	}
@@ -113,11 +113,14 @@ func (p *PostProcessor) PostProcess(
 
 	// Find path to UTM directory in our artifact
 	utmDir, err := findUTMDirectory(artifact)
+	if err != nil {
+		return nil, false, false, fmt.Errorf("error finding UTM directory: %s", err)
+	}
 	// Pass the directory of artifact to create zip archive
 	err = zipDirectory(utmDir, target)
 
 	if err != nil {
-		return nil, false, false, fmt.Errorf("Error creating zip: %s", err)
+		return nil, false, false, fmt.Errorf("error creating zip: %s", err)
 	}
 
 	ui.Say(fmt.Sprintf("Archive %s completed", target))
@@ -140,11 +143,11 @@ func zipDirectory(sourceDir, zipFile string) error {
 	if err != nil {
 		return err
 	}
-	defer zipfile.Close()
+	defer func() { _ = zipfile.Close() }()
 
 	// Create a new zip writer
 	zipWriter := zip.NewWriter(zipfile)
-	defer zipWriter.Close()
+	defer func() { _ = zipWriter.Close() }()
 
 	// Walk through the source directory
 	return filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
@@ -184,7 +187,7 @@ func zipDirectory(sourceDir, zipFile string) error {
 			if err != nil {
 				return err
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 
 			_, err = io.Copy(writer, file)
 			if err != nil {

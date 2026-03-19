@@ -52,7 +52,7 @@ func (s *StepAttachDisplay) Run(ctx context.Context, state multistep.StateBag) m
 	// Save the detach commands in the state for cleanup
 	state.Put("detach_display_commands", s.detachDisplayCommands)
 
-	ui.Message(fmt.Sprintf("Display with hardware type '%s' attached successfully.", s.HardwareType))
+	ui.Say(fmt.Sprintf("Display with hardware type '%s' attached successfully.", s.HardwareType))
 	return multistep.ActionContinue
 }
 

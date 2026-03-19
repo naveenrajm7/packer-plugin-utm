@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"compress/flate"
 	"context"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -167,7 +166,7 @@ func TestSpecificConfig(t *testing.T) {
 }
 
 func TestPostProcessorPrepare_vagrantfileTemplateExists(t *testing.T) {
-	f, err := ioutil.TempFile("", "packer")
+	f, err := os.CreateTemp("", "packer")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

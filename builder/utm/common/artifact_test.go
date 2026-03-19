@@ -4,7 +4,6 @@
 package common
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,13 +16,13 @@ func TestArtifact_impl(t *testing.T) {
 }
 
 func TestNewArtifact(t *testing.T) {
-	td, err := ioutil.TempDir("", "packer")
+	td, err := os.MkdirTemp("", "packer")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.RemoveAll(td)
+	defer func() { _ = os.RemoveAll(td) }()
 
-	err = ioutil.WriteFile(filepath.Join(td, "a"), []byte("foo"), 0644)
+	err = os.WriteFile(filepath.Join(td, "a"), []byte("foo"), 0644)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

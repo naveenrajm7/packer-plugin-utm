@@ -33,6 +33,7 @@ type Config struct {
 	utmcommon.UtmBundleConfig      `mapstructure:",squash"`
 	utmcommon.GuestAdditionsConfig `mapstructure:",squash"`
 	utmcommon.NoPauseConfig        `mapstructure:",squash"`
+	utmcommon.QemuConfig           `mapstructure:",squash"`
 
 	// Set this to true if you would like to use Hypervisor
 	// Defaults to false.
@@ -189,8 +190,9 @@ func (c *Config) Prepare(raws ...interface{}) ([]string, error) {
 	errs = packersdk.MultiErrorAppend(errs, c.ShutdownConfig.Prepare(&c.ctx)...)
 	errs = packersdk.MultiErrorAppend(errs, c.CommConfig.Prepare(&c.ctx)...)
 	errs = packersdk.MultiErrorAppend(errs, c.UtmBundleConfig.Prepare(&c.ctx)...)
-	errs = packersdk.MultiErrorAppend(errs, c.UtmVersionConfig.Prepare(c.CommConfig.Comm.Type)...)
+	errs = packersdk.MultiErrorAppend(errs, c.UtmVersionConfig.Prepare(c.Comm.Type)...)
 	errs = packersdk.MultiErrorAppend(errs, c.VNCConfig.Prepare(&c.ctx)...)
+	errs = packersdk.MultiErrorAppend(errs, c.QemuConfig.Prepare(&c.ctx)...)
 
 	if c.DiskSize == 0 {
 		c.DiskSize = 40960

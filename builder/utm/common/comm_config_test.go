@@ -4,7 +4,6 @@
 package common
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -85,12 +84,12 @@ func TestCommConfigPrepare_SSHPrivateKey(t *testing.T) {
 	}
 
 	// Test bad contents
-	tf, err := ioutil.TempFile("", "packer")
+	tf, err := os.CreateTemp("", "packer")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.Remove(tf.Name())
-	defer tf.Close()
+	defer func() { _ = os.Remove(tf.Name()) }()
+	defer func() { _ = tf.Close() }()
 
 	if _, err := tf.Write([]byte("HELLO!")); err != nil {
 		t.Fatalf("err: %s", err)

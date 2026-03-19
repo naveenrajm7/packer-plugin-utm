@@ -82,7 +82,7 @@ func (s *stepConfigureVNC) Run(ctx context.Context, state multistep.StateBag) mu
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
-	s.l.Listener.Close() // free port, but don't unlock lock file
+	_ = s.l.Listener.Close() // free port, but don't unlock lock file
 	vncPort := s.l.Port
 
 	vncPassword := VNCPassword(s.VNCDisablePassword)
@@ -93,11 +93,20 @@ func (s *stepConfigureVNC) Run(ctx context.Context, state multistep.StateBag) mu
 
 	// Add VNC arguments to the VM via Qemu additional arguments.
 	// Send choosen vncPort - 5900 as the VNC port.
+	// IMPORTANT: The AppleScript replaces (not appends) all QEMU additional args,
+	// so we must include any previously-set user args alongside the VNC arg.
 	vncQemuArg := fmt.Sprintf("-vnc %s:%d", s.VNCBindAddress, vncPort-5900)
+
+	// Collect all args: user qemuargs (already set) + VNC arg
 	addQemuArgsCommand := []string{
 		"add_qemu_additional_args.applescript", vmId,
-		"--args", vncQemuArg,
+		"--args",
 	}
+	// Re-include user qemuargs so they are not overwritten
+	if userArgs, ok := state.Get("userQemuArgs").([]string); ok {
+		addQemuArgsCommand = append(addQemuArgsCommand, userArgs...)
+	}
+	addQemuArgsCommand = append(addQemuArgsCommand, vncQemuArg)
 
 	ui.Say("Adding QEMU additional arguments...")
 	_, err = driver.ExecuteOsaScript(addQemuArgsCommand...)
@@ -107,8 +116,10 @@ func (s *stepConfigureVNC) Run(ctx context.Context, state multistep.StateBag) mu
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
-	// Save the VNC QEMU argument for later cleanup
-	state.Put("qemuAdditionalArg", vncQemuArg)
+	// Append the VNC QEMU argument to build-time args for later cleanup
+	buildTimeArgs, _ := state.Get("buildTimeQemuArgs").([]string)
+	buildTimeArgs = append(buildTimeArgs, vncQemuArg)
+	state.Put("buildTimeQemuArgs", buildTimeArgs)
 
 	return multistep.ActionContinue
 }

@@ -108,6 +108,7 @@ type FlatConfig struct {
 	DisplayNoPause            *bool             `mapstructure:"display_nopause" required:"false" cty:"display_nopause" hcl:"display_nopause"`
 	BootNoPause               *bool             `mapstructure:"boot_nopause" required:"false" cty:"boot_nopause" hcl:"boot_nopause"`
 	ExportNoPause             *bool             `mapstructure:"export_nopause" required:"false" cty:"export_nopause" hcl:"export_nopause"`
+	QemuArgs                  [][]string        `mapstructure:"qemuargs" required:"false" cty:"qemuargs" hcl:"qemuargs"`
 	Hypervisor                *bool             `mapstructure:"hypervisor" required:"false" cty:"hypervisor" hcl:"hypervisor"`
 	UEFIBoot                  *bool             `mapstructure:"uefi_boot" required:"false" cty:"uefi_boot" hcl:"uefi_boot"`
 	RTCLocalTime              *bool             `mapstructure:"rtc_local_time" required:"false" cty:"rtc_local_time" hcl:"rtc_local_time"`
@@ -235,6 +236,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"display_nopause":              &hcldec.AttrSpec{Name: "display_nopause", Type: cty.Bool, Required: false},
 		"boot_nopause":                 &hcldec.AttrSpec{Name: "boot_nopause", Type: cty.Bool, Required: false},
 		"export_nopause":               &hcldec.AttrSpec{Name: "export_nopause", Type: cty.Bool, Required: false},
+		"qemuargs":                     &hcldec.AttrSpec{Name: "qemuargs", Type: cty.List(cty.List(cty.String)), Required: false},
 		"hypervisor":                   &hcldec.AttrSpec{Name: "hypervisor", Type: cty.Bool, Required: false},
 		"uefi_boot":                    &hcldec.AttrSpec{Name: "uefi_boot", Type: cty.Bool, Required: false},
 		"rtc_local_time":               &hcldec.AttrSpec{Name: "rtc_local_time", Type: cty.Bool, Required: false},

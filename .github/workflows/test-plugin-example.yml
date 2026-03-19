@@ -26,10 +26,10 @@ jobs:
     name: init and build example
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Packer
-        uses: hashicorp/setup-packer@main
+        uses: hashicorp/setup-packer@v3.1.0
         id: setup
         with:
           version: ${{ env.PACKER_VERSION }}
