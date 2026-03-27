@@ -26,12 +26,12 @@ on run argv
 
     -- Create a new VM with the specified properties
     tell application "UTM"
-      set vm to make new virtual machine with properties Â
-        { backend:vmBackend, Â
-          configuration:{ Â
-            name:vmName, Â
-            architecture:vmArch Â
-          } Â
+      set vm to make new virtual machine with properties Â¬
+        { backend:vmBackend, Â¬
+          configuration:{ Â¬
+            name:vmName, Â¬
+            architecture:vmArch Â¬
+          } Â¬
         }
       
       -- UTM by default creates a new VM with iso and disk drives
