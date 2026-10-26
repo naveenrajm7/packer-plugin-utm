@@ -1,0 +1,17 @@
+<!-- Code generated from the comments of the Config struct in builder/utm/ipsw/config.go; DO NOT EDIT MANUALLY -->
+
+- `target_path` (string) - Optional download destination; the Packer cache is used by default.
+
+- `vm_name` (string) - Name of the UTM virtual machine.
+
+- `cpus` (int) - CPUs assigned to the guest; defaults to 4.
+
+- `memory` (int) - Guest memory in MiB; defaults to 8192.
+
+- `install_timeout` (duration string | ex: "1h5m2s") - Maximum duration of the macOS restore; defaults to 90 minutes.
+
+- `keep_registered` (bool) - Keep the VM registered in UTM after a successful export.
+
+- `macos_auto_login` (bool) - Enable automatic login during first-boot provisioning (macOS 27+).
+
+<!-- End of code generated from the comments of the Config struct in builder/utm/ipsw/config.go; -->

@@ -1,10 +1,12 @@
 package common
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"log"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -44,6 +46,8 @@ type Driver interface {
 	// Utmctl executes the given Utmctl command
 	// and returns the stdout channel as string
 	Utmctl(...string) (string, error)
+	// UtmctlWithInput sends sensitive input on stdin without placing it in argv.
+	UtmctlWithInput(context.Context, string, ...string) (string, error)
 
 	// Verify checks to make sure that this driver should function
 	// properly. If there is any indication the driver can't function,
@@ -70,32 +74,40 @@ func NewDriver() (Driver, error) {
 	driver = &Utm45Driver{utmctlPath}
 	version, err := driver.Version()
 	if err != nil {
-		log.Fatalf("Error getting UTM version: %v", err)
+		return nil, fmt.Errorf("reading UTM version: %w", err)
 	}
-	fmt.Printf("UTM version: %s\n", version)
-
-	// Parse the version to get major and minor parts
-	versionParts := strings.Split(version, ".")
-	if len(versionParts) < 2 {
-		log.Fatalf("Invalid UTM version format: %s", version)
+	log.Printf("UTM version: %s", version)
+	driver, err = driverForVersion(version, utmctlPath)
+	if err != nil {
+		return nil, err
 	}
-	majorMinorVersion := fmt.Sprintf("%s.%s", versionParts[0], versionParts[1])
-
-	// Decide which driver to use based on the version
-	switch majorMinorVersion {
-	case "4.5":
-		driver = &Utm45Driver{utmctlPath}
-	case "4.6":
-		driver = &Utm46Driver{Utm45Driver{utmctlPath}}
-	case "4.7":
-		driver = &Utm47Driver{Utm46Driver{Utm45Driver{utmctlPath}}}
-	default:
-		log.Fatalf("Unsupported UTM version: %s", version)
-	}
-
 	if err := driver.Verify(); err != nil {
 		return nil, err
 	}
-
 	return driver, nil
+}
+
+func driverForVersion(version, utmctlPath string) (Driver, error) {
+	versionParts := strings.Split(version, ".")
+	if len(versionParts) < 2 {
+		return nil, fmt.Errorf("invalid UTM version: %q", version)
+	}
+	major, majorErr := strconv.Atoi(versionParts[0])
+	minor, minorErr := strconv.Atoi(versionParts[1])
+	if majorErr != nil || minorErr != nil {
+		return nil, fmt.Errorf("invalid UTM version: %q", version)
+	}
+	base := Utm45Driver{utmctlPath}
+	switch {
+	case major == 4 && minor == 5:
+		return &base, nil
+	case major == 4 && minor == 6:
+		return &Utm46Driver{base}, nil
+	case major == 4 && minor == 7:
+		return &Utm47Driver{Utm46Driver{base}}, nil
+	case major == 5:
+		return &Utm50Driver{Utm47Driver{Utm46Driver{base}}}, nil
+	default:
+		return nil, fmt.Errorf("unsupported UTM version: %s", version)
+	}
 }

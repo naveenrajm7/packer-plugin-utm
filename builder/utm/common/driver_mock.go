@@ -1,6 +1,9 @@
 package common
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 type DriverMock struct {
 	sync.Mutex
@@ -9,9 +12,10 @@ type DriverMock struct {
 	DeleteName   string
 	DeleteErr    error
 
-	ExecuteOsaCalls  [][]string
-	ExecuteOsaErrs   []error
-	ExecuteOsaResult string
+	ExecuteOsaCalls   [][]string
+	ExecuteOsaErrs    []error
+	ExecuteOsaResult  string
+	ExecuteOsaResults []string
 
 	GuestToolsIsoPathCalled bool
 	GuestToolsIsoPathErr    error
@@ -28,9 +32,12 @@ type DriverMock struct {
 	StopName string
 	StopErr  error
 
-	UtmctlCalls  [][]string
-	UtmctlErrs   []error
-	UtmctlResult string
+	UtmctlCalls      [][]string
+	UtmctlErrs       []error
+	UtmctlResult     string
+	UtmctlInputCalls [][]string
+	UtmctlInputErr   error
+	UtmctlInput      string
 
 	VerifyCalled bool
 	VerifyErr    error
@@ -49,8 +56,11 @@ func (d *DriverMock) Delete(name string) error {
 func (d *DriverMock) ExecuteOsaScript(command ...string) (string, error) {
 	d.ExecuteOsaCalls = append(d.ExecuteOsaCalls, command)
 
-	if len(d.ExecuteOsaErrs) >= len(d.ExecuteOsaCalls) {
+	if len(d.ExecuteOsaErrs) >= len(d.ExecuteOsaCalls) && d.ExecuteOsaErrs[len(d.ExecuteOsaCalls)-1] != nil {
 		return "", d.ExecuteOsaErrs[len(d.ExecuteOsaCalls)-1]
+	}
+	if len(d.ExecuteOsaResults) >= len(d.ExecuteOsaCalls) {
+		return d.ExecuteOsaResults[len(d.ExecuteOsaCalls)-1], nil
 	}
 	return d.ExecuteOsaResult, nil
 }
@@ -90,6 +100,12 @@ func (d *DriverMock) Utmctl(args ...string) (string, error) {
 		return "", d.UtmctlErrs[len(d.UtmctlCalls)-1]
 	}
 	return d.UtmctlResult, nil
+}
+
+func (d *DriverMock) UtmctlWithInput(_ context.Context, input string, args ...string) (string, error) {
+	d.UtmctlInputCalls = append(d.UtmctlInputCalls, args)
+	d.UtmctlInput = input
+	return "", d.UtmctlInputErr
 }
 
 func (d *DriverMock) Verify() error {
