@@ -22,7 +22,7 @@ func (d *Utm46Driver) Import(path string) (string, error) {
 	// Import VM
 	cmd := exec.Command(
 		"osascript", "-e",
-		fmt.Sprintf(`tell application "UTM" to import new virtual machine from POSIX file "%s"`, path),
+		fmt.Sprintf(`tell application %q to import new virtual machine from POSIX file %q`, d.appPath(), path),
 	)
 	cmd.Stdout = &stdout
 	if err := cmd.Run(); err != nil {
@@ -50,7 +50,7 @@ func (d *Utm46Driver) Export(vmId string, path string) error {
 	// Export VM
 	cmd := exec.Command(
 		"osascript", "-e",
-		fmt.Sprintf(`tell application "UTM" to export virtual machine id "%s" to POSIX file "%s"`, vmId, path),
+		fmt.Sprintf(`tell application %q to export virtual machine id %q to POSIX file %q`, d.appPath(), vmId, path),
 	)
 	// print command to log
 	log.Printf("Executing command: %s", cmd.String())

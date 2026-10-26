@@ -2,12 +2,14 @@ package common
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -37,6 +39,10 @@ func (d *Utm45Driver) ExecuteOsaScript(command ...string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to read script %s: %v", scriptPath, err)
 	}
+	// Resolve scripting against the same app as utmctl. macOS can otherwise
+	// resolve "UTM" to an older copy in a build or archive directory.
+	script := strings.ReplaceAll(string(scriptContent), `tell application "UTM"`,
+		"tell application "+strconv.Quote(d.appPath()))
 
 	// Construct the command to execute
 	cmd := exec.Command("osascript", "-")
@@ -53,7 +59,7 @@ func (d *Utm45Driver) ExecuteOsaScript(command ...string) (string, error) {
 
 	go func() {
 		defer stdin.Close()
-		io.WriteString(stdin, string(scriptContent))
+		io.WriteString(stdin, script)
 	}()
 
 	var stdout, stderr bytes.Buffer
@@ -70,8 +76,14 @@ func (d *Utm45Driver) ExecuteOsaScript(command ...string) (string, error) {
 	if stderrString != "" {
 		log.Printf("stderr: %s", stderrString)
 	}
+	if err != nil {
+		if stderrString != "" {
+			return stdoutString, fmt.Errorf("osascript %s: %w: %s", command[0], err, stderrString)
+		}
+		return stdoutString, fmt.Errorf("osascript %s: %w", command[0], err)
+	}
 
-	return stdoutString, err
+	return stdoutString, nil
 }
 
 // UTM 4.5 Doesn't support exporting VMs
@@ -110,7 +122,7 @@ func (d *Utm45Driver) Import(path string) (string, error) {
 	// This is a limitation of UTM
 	cmd := exec.Command(
 		"osascript", "-e",
-		fmt.Sprintf(`tell application "UTM" to open POSIX file "%s"`, path),
+		fmt.Sprintf(`tell application %q to open POSIX file %q`, d.appPath(), path),
 	)
 	cmd.Stdout = &stdout
 	if err := cmd.Run(); err != nil {
@@ -134,27 +146,12 @@ func (d *Utm45Driver) IsRunning(name string) (bool, error) {
 	}
 
 	output := strings.TrimSpace(stdout.String())
-	if output == "started" {
+	switch output {
+	case "starting", "started", "pausing", "paused", "resuming", "stopping":
 		return true, nil
+	default:
+		return false, nil
 	}
-
-	// We consider "stopping" to still be running. We wait for it to
-	// be completely stopped or some other state.
-	if output == "stopping" {
-		return true, nil
-	}
-
-	// We consider "paused" to still be running. We wait for it to
-	// be completely stopped or some other state.
-	if output == "paused" {
-		return true, nil
-	}
-
-	// There might be other intermediate states that we consider
-	// running, like "pausing", "resuming", "starting", etc.
-	// but for now we just use these three.
-
-	return false, nil
 }
 
 func (d *Utm45Driver) Stop(name string) error {
@@ -190,12 +187,49 @@ func (d *Utm45Driver) Utmctl(args ...string) (string, error) {
 	return stdoutString, err
 }
 
+func (d *Utm45Driver) UtmctlWithInput(ctx context.Context, input string, args ...string) (string, error) {
+	if len(args) == 0 {
+		return "", fmt.Errorf("no utmctl command provided")
+	}
+	var stdout, stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, d.UtmctlPath, args...)
+	cmd.Stdin = strings.NewReader(input)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("utmctl %s failed: %w: %s", args[0], err, strings.TrimSpace(stderr.String()))
+	}
+	return strings.TrimSpace(stdout.String()), nil
+}
+
 func (d *Utm45Driver) Verify() error {
 	return nil
 }
 
+func (d *Utm45Driver) appPath() string {
+	resolved, err := filepath.EvalSymlinks(d.UtmctlPath)
+	if err != nil {
+		return "UTM"
+	}
+	app := filepath.Dir(filepath.Dir(filepath.Dir(resolved)))
+	if filepath.Ext(app) != ".app" {
+		return "UTM"
+	}
+	return app
+}
+
 // Version reads the version of UTM that is installed.
 func (d *Utm45Driver) Version() (string, error) {
+	// The utmctl binary is the component we actually use. System Events can
+	// retain a stale application version after UTM is upgraded.
+	if output, err := exec.Command(d.UtmctlPath, "version").Output(); err == nil {
+		version := strings.TrimSpace(string(output))
+		if regexp.MustCompile(`^\d+\.\d+\.\d+$`).MatchString(version) {
+			return version, nil
+		}
+	}
+
+	// Older UTM releases may not expose `utmctl version`.
 	var stdout bytes.Buffer
 
 	cmd := exec.Command("osascript", "-e",
@@ -222,5 +256,4 @@ func (d *Utm45Driver) Version() (string, error) {
 
 	log.Printf("UTM version: %s", matches[1])
 	return matches[1], nil
-
 }
