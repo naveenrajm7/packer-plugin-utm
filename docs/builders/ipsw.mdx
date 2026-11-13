@@ -1,0 +1,81 @@
+---
+description: |
+  Create a macOS virtual machine from an IPSW restore image with UTM's Apple Virtualization backend.
+page_title: UTM IPSW - Builders
+nav_title: IPSW
+---
+
+# UTM IPSW Builder
+
+Type: `utm-ipsw`
+
+Artifact BuilderId: `naveenrajm7.utm`
+
+This builder creates an Apple Virtualization macOS VM, installs macOS from an IPSW,
+and exports a `.utm` bundle. It requires UTM 5.0.6 or later and an Apple Silicon
+Mac. The IPSW must be supported by the host. UTM creates the initial 64 GiB drive.
+
+The default `communicator = "none"` creates an installed VM without booting it.
+Setup Assistant runs when the exported VM first starts. This works on supported
+hosts before macOS 27. Guest provisioners require `communicator = "ssh"`;
+they cannot configure an unbooted VM.
+
+```hcl
+source "utm-ipsw" "macos" {
+  ipsw_url      = "/absolute/path/to/UniversalMac_Restore.ipsw"
+  ipsw_checksum = "sha256:REPLACE_WITH_ACTUAL_CHECKSUM"
+  vm_name       = "packer-macos"
+  communicator  = "none"
+}
+
+build {
+  sources = ["source.utm-ipsw.macos"]
+}
+```
+
+For a macOS 27 or newer host **and guest**, set `communicator = "ssh"` and
+provide `ssh_username` and `ssh_password`. After installation, UTM uses these
+credentials once on the first start to create an administrator account and
+enable Remote Login. Packer then connects over SSH, runs provisioners,
+requests a graceful shutdown, and exports the VM. UTM receives the password
+through `utmctl` standard input, rather than a command-line argument. Supply
+`ssh_password` as a sensitive Packer variable. The builder discovers the guest
+IP through `utmctl ip-address`; set `ssh_host` only to override discovery.
+Apple network port forwarding is not used.
+
+```hcl
+variable "macos_password" {
+  type      = string
+  sensitive = true
+}
+
+source "utm-ipsw" "macos27" {
+  ipsw_url      = "/absolute/path/to/UniversalMac_27_Restore.ipsw"
+  ipsw_checksum = "sha256:REPLACE_WITH_ACTUAL_CHECKSUM"
+  communicator  = "ssh"
+  ssh_username  = "packer"
+  ssh_password  = var.macos_password
+  ssh_timeout   = "30m"
+}
+```
+
+If UTM's graceful power-down request is ignored, the builder asks macOS to
+shut down over SSH with `sudo`; it supplies the account password on standard
+input rather than in the command line.
+
+`install_timeout` controls how long Packer waits for UTM's installation status
+to report completion. The builder does not export an incomplete restore.
+
+## Required configuration
+
+@include 'builder/utm/ipsw/Config-required.mdx'
+
+## Optional configuration
+
+@include 'builder/utm/ipsw/Config-not-required.mdx'
+
+@include 'builder/utm/common/ExportConfig-not-required.mdx'
+
+@include 'builder/utm/common/ShutdownConfig-not-required.mdx'
+
+@include 'packer-plugin-sdk/communicator/Config-not-required.mdx'

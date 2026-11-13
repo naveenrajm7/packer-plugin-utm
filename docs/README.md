@@ -30,6 +30,9 @@ The following UTM Builders and post-processors are supported.
 
 #### Builders
 
+- [utm-ipsw](builders/ipsw.mdx) - Creates and installs a macOS VM from an IPSW
+  using UTM's Apple Virtualization backend, then exports a `.utm` image.
+
 - [utm-iso](builders/iso.mdx) - Starts from an ISO file, creates a brand-new UTM VM, installs an OS, provisions software within the OS, then exports that machine to create an image. 
 This is best for people who want to start from scratch.
 
